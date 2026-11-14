@@ -3,7 +3,6 @@
 
 
 
-
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
@@ -414,8 +413,8 @@ with tab_history:
     st.caption("Session history may clear when the app restarts. Download the CSV to preserve records. These are simulation snapshots, not real bridge sensor logs.")
 
 st.caption("Educational simulation using a simplified beam model. It is not a real bridge measurement system or a certified structural safety assessment.")
-Exit full screen
-Ctrl+Shift+F
+Context window full
+Start a new chat with an automatic summary of this conversation, or upgrade to continue here with more context available in every chat.
 
 
 
