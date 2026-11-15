@@ -1,16 +1,9 @@
 
 import streamlit as st
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-from datetime import datetime
-
-# ============================================================
-# PAGE CONFIGURATION
-# ============================================================
+import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="Smart Bridge Monitor",
+    page_title="Intelligent Bridge Monitoring",
     page_icon="🌉",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -18,793 +11,653 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-#MainMenu, footer, header {visibility: hidden;}
-
-.stApp {
-    background: linear-gradient(#75C8F1, #D5F0FA);
-    overflow-x: hidden;
-}
-
-.block-container {
+html, body, [data-testid="stAppViewContainer"],
+[data-testid="stMain"], .block-container {
+    margin: 0 !important;
+    padding: 0 !important;
     max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    overflow: hidden !important;
 }
-
-[data-testid="stPlotlyChart"] {
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-[data-testid="stPlotlyChart"] > div {
-    width: 100% !important;
-}
-
-.st-key-top_panel,
-.st-key-left_panel,
-.st-key-right_panel,
-.st-key-bottom_panel {
-    position: fixed !important;
-    z-index: 1000 !important;
-    background: rgba(9, 65, 111, 0.78);
-    backdrop-filter: blur(13px);
-    -webkit-backdrop-filter: blur(13px);
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 15px;
-    color: white !important;
-    padding: 12px 16px;
-    box-shadow: 0 8px 25px rgba(0,35,75,0.22);
-}
-
-.st-key-top_panel {
-    top: 12px;
-    left: 1.3%;
-    width: 97.4%;
-}
-
-.st-key-left_panel {
-    top: 112px;
-    left: 1.3%;
-    width: 255px;
-    max-height: 67vh;
-    overflow-y: auto;
-}
-
-.st-key-right_panel {
-    top: 112px;
-    right: 1.3%;
-    width: 255px;
-    max-height: 67vh;
-    overflow-y: auto;
-}
-
-.st-key-bottom_panel {
-    bottom: 12px;
-    left: 1.3%;
-    width: 97.4%;
-}
-
-.st-key-top_panel *,
-.st-key-left_panel *,
-.st-key-right_panel *,
-.st-key-bottom_panel * {
-    color: white !important;
-}
-
-.st-key-left_panel [data-testid="stSlider"],
-.st-key-right_panel [data-testid="stSlider"] {
-    padding-top: 0;
-}
-
-.st-key-left_panel [data-testid="stWidgetLabel"],
-.st-key-right_panel [data-testid="stWidgetLabel"] {
-    font-size: 0.82rem;
-}
-
-.st-key-left_panel [data-baseweb="select"],
-.st-key-left_panel input {
-    background-color: rgba(255,255,255,0.12);
-}
-
-.st-key-left_panel [data-testid="stButton"] button,
-.st-key-bottom_panel [data-testid="stDownloadButton"] button {
-    background: #159BD4;
-    border: 1px solid #8ADFFF;
-    color: white;
-    border-radius: 9px;
-}
-
-.metric-box {
-    background: rgba(255,255,255,0.12);
-    padding: 9px;
-    border-radius: 9px;
-    margin: 5px 0;
-}
-
-.small-note {
-    font-size: 11px;
-    opacity: 0.8;
+header, footer, #MainMenu {
+    visibility: hidden;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# SESSION STATE
-# ============================================================
-
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-# ============================================================
-# TOP HEADER
-# ============================================================
-
-with st.container(key="top_panel"):
-    h1, h2, h3 = st.columns([3.2, 1.5, 2])
-
-    with h1:
-        st.markdown(
-            "## 🌉 SMART BRIDGE MONITOR"
-            "<div class='small-note'>STRUCTURAL HEALTH MONITORING SYSTEM</div>",
-            unsafe_allow_html=True
-        )
-
-    with h2:
-        st.markdown("🟢 **SYSTEM ONLINE**")
-        st.caption("Continuous monitoring")
-
-    with h3:
-        st.markdown(
-            f"**MONITORING MODE**　📡　{datetime.now().strftime('%b %d, %Y  %H:%M:%S')}"
-        )
-
-# ============================================================
-# LEFT PANEL - CONTROLS
-# ============================================================
-
-with st.container(key="left_panel"):
-    st.markdown("### 🚙 Vehicle Controls")
-
-    vehicle_position = st.slider(
-        "Vehicle position",
-        min_value=0.0,
-        max_value=40.0,
-        value=20.0,
-        step=0.5
-    )
-
-    vehicle_weight = st.slider(
-        "Vehicle load (N)",
-        min_value=5000,
-        max_value=50000,
-        value=20000,
-        step=1000
-    )
-
-    axle_count = st.selectbox(
-        "Number of axles",
-        [2, 3, 4, 5],
-        index=1
-    )
-
-    axle_spacing = st.slider(
-        "Axle spacing (m)",
-        1.0,
-        5.0,
-        2.0,
-        0.5
-    )
-
-    st.divider()
-    st.markdown("### ⚙️ Simulation Settings")
-
-    traffic_level = st.select_slider(
-        "Traffic volume",
-        options=["Low", "Medium", "High", "Very High"],
-        value="Medium"
-    )
-
-    vehicle_speed = st.slider(
-        "Vehicle speed",
-        10,
-        120,
-        60,
-        5
-    )
-
-    st.divider()
-    st.markdown("### 🏗️ Structural Conditions")
-
-    stiffness_reduction = st.slider(
-        "Simulated stiffness reduction (%)",
-        0,
-        30,
-        0,
-        1
-    )
-
-    change_location = st.slider(
-        "Change location (m)",
-        0.0,
-        40.0,
-        20.0,
-        1.0
-    )
-
-    local_change = st.slider(
-        "Local change signal (%)",
-        0,
-        40,
-        0,
-        1
-    )
-
-    attention_threshold = st.slider(
-        "Deflection attention threshold (mm)",
-        1.0,
-        20.0,
-        5.0,
-        0.5
-    )
-
-# ============================================================
-# BRIDGE MODEL
-# ============================================================
-
-L = 40.0
-E = 200e9
-I = 0.08
-
-x = np.linspace(0, L, 401)
-
-effective_EI = E * I * (1 - stiffness_reduction / 100)
-
-# Simplified moving-load response for visualization
-axle_offsets = np.arange(axle_count) * axle_spacing
-axle_positions = vehicle_position - axle_offsets
-
-load_per_axle = vehicle_weight / axle_count
-
-def gaussian_response(position, load, width=5.5):
-    return (
-        load / 10000
-        * np.exp(-((x - position) / width) ** 2)
-    )
-
-response = np.zeros_like(x)
-
-for axle in axle_positions:
-    response += gaussian_response(axle, load_per_axle)
-
-# Deflection is a simplified educational response.
-deflection_m = (
-    response * 0.0015
-    * (1 + stiffness_reduction / 100)
-)
-
-# Persistent localized change signal
-damage_shape = np.exp(
-    -((x - change_location) / 3.0) ** 2
-)
-
-deflection_m += (
-    local_change / 100
-    * 0.003
-    * damage_shape
-)
-
-deflection_mm = deflection_m * 1000
-
-deck_base = 8.0
-deck_z = deck_base - deflection_m
-
-peak_deflection = float(np.max(np.abs(deflection_mm)))
-
-# ============================================================
-# SENSOR NETWORK
-# ============================================================
-
-sensor_x_stations = np.linspace(2, 38, 11)
-sensor_y_positions = np.linspace(-3.2, 3.2, 5)
-
-normal_x = []
-normal_y = []
-normal_z = []
-normal_values = []
-
-for sx in sensor_x_stations:
-    idx = np.argmin(np.abs(x - sx))
-
-    for sy in sensor_y_positions:
-        normal_x.append(sx)
-        normal_y.append(sy)
-        normal_z.append(deck_base - deflection_m[idx] + 0.45)
-
-        normal_values.append(
-            abs(deflection_mm[idx]) * (1 + abs(sy) * 0.03)
-        )
-
-normal_x = np.array(normal_x)
-normal_y = np.array(normal_y)
-normal_z = np.array(normal_z)
-normal_values = np.array(normal_values)
-
-# Five channels at eleven stations = 55 normal readings.
-# Six additional channels at eleven stations = 66 special readings.
-
-persistent_change = (
-    local_change >= 5 or stiffness_reduction >= 5
-)
-
-special_mode = (
-    peak_deflection >= attention_threshold
-    or persistent_change
-)
-
-special_x = []
-special_y = []
-special_z = []
-
-special_y_positions = np.linspace(-3.5, 3.5, 6)
-
-for sx in sensor_x_stations:
-    idx = np.argmin(np.abs(x - sx))
-
-    for sy in special_y_positions:
-        special_x.append(sx)
-        special_y.append(sy)
-        special_z.append(
-            deck_base - deflection_m[idx] + 0.85
-        )
-
-# ============================================================
-# 3D BRIDGE SCENE
-# ============================================================
-
-fig = go.Figure()
-
-# BLUE WATER
-water_x = np.linspace(-5, 45, 75)
-water_y = np.linspace(-35, 35, 55)
-WX, WY = np.meshgrid(water_x, water_y)
-
-WZ = (
-    0.1
-    + 0.035 * np.sin(WX * 0.8)
-    * np.cos(WY * 0.6)
-)
-
-fig.add_trace(go.Surface(
-    x=WX,
-    y=WY,
-    z=WZ,
-    colorscale=[
-        [0, "#075B91"],
-        [0.35, "#1687BD"],
-        [0.7, "#39A9D1"],
-        [1, "#8BD9EB"]
-    ],
-    showscale=False,
-    opacity=0.96,
-    hoverinfo="skip",
-    name="Water"
-))
-
-# GREEN DISTANT SHORELINE
-shore_x = np.linspace(-5, 45, 75)
-shore_y = np.linspace(17, 29, 35)
-SX, SY = np.meshgrid(shore_x, shore_y)
-
-SZ = (
-    1.5
-    + 2.5 * np.exp(-((SX - 8) / 12) ** 2)
-    + 2.2 * np.exp(-((SX - 34) / 9) ** 2)
-    + 0.5 * np.sin(SX / 3) * np.cos(SY / 4)
-)
-
-fig.add_trace(go.Surface(
-    x=SX,
-    y=SY,
-    z=SZ,
-    colorscale=[
-        [0, "#28663B"],
-        [0.4, "#428C42"],
-        [0.75, "#68AD4F"],
-        [1, "#A0CB70"]
-    ],
-    showscale=False,
-    hoverinfo="skip",
-    name="Green hills"
-))
-
-# FAR SHORELINE ON OPPOSITE SIDE
-SY2 = -SY
-
-fig.add_trace(go.Surface(
-    x=SX,
-    y=SY2,
-    z=SZ,
-    colorscale=[
-        [0, "#28663B"],
-        [0.4, "#428C42"],
-        [0.75, "#68AD4F"],
-        [1, "#A0CB70"]
-    ],
-    showscale=False,
-    hoverinfo="skip",
-    name="Far hills"
-))
-
-# BRIDGE DECK
-deck_y = np.linspace(-4, 4, 12)
-DX, DY = np.meshgrid(x, deck_y)
-DZ = np.tile(deck_z, (len(deck_y), 1))
-
-fig.add_trace(go.Surface(
-    x=DX,
-    y=DY,
-    z=DZ,
-    colorscale=[
-        [0, "#AEB9C2"],
-        [0.5, "#DCE3E8"],
-        [1, "#FFFFFF"]
-    ],
-    showscale=False,
-    opacity=1,
-    hoverinfo="skip",
-    name="Bridge deck"
-))
-
-# BRIDGE EDGE RAILINGS
-for side in [-1, 1]:
-    fig.add_trace(go.Scatter3d(
-        x=x,
-        y=np.full_like(x, side * 4),
-        z=deck_z + 0.5,
-        mode="lines",
-        line=dict(color="#E8F4F8", width=5),
-        showlegend=False,
-        hoverinfo="skip"
-    ))
-
-# TWO MAIN TOWERS
-tower_positions = [18, 32]
-
-for tx in tower_positions:
-    tower_bottom = 8.0
-    tower_top = 28.0
-
-    for ty in [-1.0, 1.0]:
-        fig.add_trace(go.Scatter3d(
-            x=[tx, tx],
-            y=[ty, ty],
-            z=[tower_bottom, tower_top],
-            mode="lines",
-            line=dict(color="#E8E8E8", width=13),
-            showlegend=False,
-            hoverinfo="skip"
-        ))
-
-    # Crossbeam
-    fig.add_trace(go.Scatter3d(
-        x=[tx, tx],
-        y=[-1, 1],
-        z=[tower_top, tower_top],
-        mode="lines",
-        line=dict(color="#F5F5F5", width=9),
-        showlegend=False,
-        hoverinfo="skip"
-    ))
-
-    # Cable stays on both sides
-    anchor_positions = np.linspace(
-        max(1, tx - 14),
-        min(39, tx + 14),
-        13
-    )
-
-    for anchor in anchor_positions:
-        idx = np.argmin(np.abs(x - anchor))
-        anchor_z = deck_z[idx] + 0.35
-
-        for ty in [-3.5, 3.5]:
-            fig.add_trace(go.Scatter3d(
-                x=[tx, anchor],
-                y=[0, ty],
-                z=[tower_top, anchor_z],
-                mode="lines",
-                line=dict(
-                    color="rgba(245,250,255,0.92)",
-                    width=2
-                ),
-                showlegend=False,
-                hoverinfo="skip"
-            ))
-
-# SUPPORT PIERS
-for px in [8, 18, 25, 32, 39]:
-    fig.add_trace(go.Scatter3d(
-        x=[px, px],
-        y=[0, 0],
-        z=[0.3, deck_base],
-        mode="lines",
-        line=dict(color="#C9D2D9", width=15),
-        showlegend=False,
-        hoverinfo="skip"
-    ))
-
-# GREEN NORMAL SENSORS - 55 DOTS
-fig.add_trace(go.Scatter3d(
-    x=normal_x,
-    y=normal_y,
-    z=normal_z,
-    mode="markers",
-    marker=dict(
-        size=6,
-        color="#00FF55",
-        line=dict(color="white", width=2),
-        opacity=1
-    ),
-    name="55 Normal sensors",
-    text=[
-        f"Normal sensor {i+1}<br>Deflection: {v:.3f} mm"
-        for i, v in enumerate(normal_values)
-    ],
-    hovertemplate="%{text}<extra></extra>"
-))
-
-# RED SPECIAL ATTENTION SENSORS - 66 DOTS
-if special_mode:
-    fig.add_trace(go.Scatter3d(
-        x=special_x,
-        y=special_y,
-        z=special_z,
-        mode="markers",
-        marker=dict(
-            size=7,
-            color="#FF3030",
-            line=dict(color="white", width=2),
-            opacity=1
-        ),
-        name="66 Special attention sensors",
-        text=[
-            f"Special sensor {i+1}<br>Attention mode active"
-            for i in range(66)
-        ],
-        hovertemplate="%{text}<extra></extra>"
-    ))
-
-# MOVING VEHICLE
-vehicle_index = np.argmin(np.abs(x - vehicle_position))
-
-fig.add_trace(go.Scatter3d(
-    x=[vehicle_position],
-    y=[0],
-    z=[deck_z[vehicle_index] + 1.0],
-    mode="markers+text",
-    marker=dict(
-        size=12,
-        color="#F5F7FA",
-        symbol="square",
-        line=dict(color="#253D50", width=3)
-    ),
-    text=["🚚 VEHICLE"],
-    textposition="top center",
-    textfont=dict(color="white", size=12),
-    name="Moving vehicle",
-    hovertemplate="Vehicle position: %{x:.1f} m<extra></extra>"
-))
-
-# 3D SCENE SETTINGS
-fig.update_layout(
-    height=950,
-    margin=dict(l=0, r=0, t=0, b=0),
-    paper_bgcolor="#8CCFF0",
-    plot_bgcolor="#8CCFF0",
-    showlegend=False,
-    scene=dict(
-        bgcolor="#8CCFF0",
-        xaxis=dict(
-            visible=False,
-            range=[-5, 45]
-        ),
-        yaxis=dict(
-            visible=False,
-            range=[-35, 35]
-        ),
-        zaxis=dict(
-            visible=False,
-            range=[0, 31]
-        ),
-        aspectmode="manual",
-        aspectratio=dict(x=2.2, y=1.25, z=0.95),
-        camera=dict(
-            eye=dict(x=1.65, y=-2.5, z=1.15),
-            center=dict(x=0, y=0, z=0)
-        )
-    )
-)
-
-# ============================================================
-# MAIN FULL-SCREEN BRIDGE
-# ============================================================
-
-st.plotly_chart(
-    fig,
-    use_container_width=True,
-    config={
-        "displayModeBar": False,
-        "scrollZoom": True,
-        "responsive": True
-    },
-    key="bridge_scene"
-)
-
-# ============================================================
-# SENSOR CALCULATIONS
-# ============================================================
-
-average_deflection = float(np.mean(np.abs(normal_values)))
-
-average_strain = (
-    average_deflection * 42.5 + 12
-)
-
-average_vibration = (
-    0.12 + average_deflection * 0.035
-)
-
-average_temperature = 27.0
-
-traffic_factor = {
-    "Low": 0.35,
-    "Medium": 0.60,
-    "High": 0.82,
-    "Very High": 1.0
-}[traffic_level]
-
-vehicle_count = int(1248 * traffic_factor)
-
-alert_count = (
-    3 if special_mode else 0
-)
-
-# ============================================================
-# RIGHT PANEL - SENSOR READINGS AND ALERTS
-# ============================================================
-
-with st.container(key="right_panel"):
-    st.markdown("### 📡 Sensor Readings")
-
-    st.markdown(
-        f"""
-        <div class="metric-box">
-        🟢 Normal Sensors <b style="float:right">55 / 55</b>
-        </div>
-        <div class="metric-box">
-        🔴 Attention Sensors <b style="float:right">
-        {66 if special_mode else 0} / 66
-        </b>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.divider()
-
-    st.metric("Average strain", f"{average_strain:.2f} με")
-    st.metric("Average vibration", f"{average_vibration:.3f} g")
-    st.metric("Average temperature", f"{average_temperature:.1f} °C")
-    st.metric("Maximum deflection", f"{peak_deflection:.3f} mm")
-
-    st.divider()
-    st.markdown("### 🚨 Alerts")
-
-    if special_mode:
-        st.error("SPECIAL ATTENTION MODE ACTIVE")
-        st.warning("Structural response requires further investigation.")
-        st.write("🔴 Deflection / persistent-change trigger")
-    else:
-        st.success("No significant simulated changes detected.")
-
-    st.divider()
-    st.markdown("### 🔍 Change Detection")
-
-    if persistent_change:
-        st.warning(
-            f"Persistent change signal: {local_change}%"
-        )
-        st.write(
-            f"Simulated change location: {change_location:.1f} m"
-        )
-    else:
-        st.success("No persistent change signal configured.")
-
-    if peak_deflection >= attention_threshold:
-        st.warning("Deflection threshold exceeded.")
-    else:
-        st.success("Deflection below attention threshold.")
-
-# ============================================================
-# HISTORY
-# ============================================================
-
-snapshot = {
-    "Time": datetime.now().strftime("%H:%M:%S"),
-    "Vehicle position (m)": vehicle_position,
-    "Peak deflection (mm)": peak_deflection,
-    "Average strain (με)": average_strain,
-    "Average vibration (g)": average_vibration,
-    "Special attention": special_mode
+html = r"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { box-sizing:border-box; }
+html,body {
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+    background:#86c9ed;
+}
+#scene {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+}
+.panel {
+    position:absolute;
+    z-index:5;
+    color:white;
+    background:rgba(8,42,70,.76);
+    border:1px solid rgba(255,255,255,.32);
+    border-radius:13px;
+    padding:13px;
+    backdrop-filter:blur(12px);
+    box-shadow:0 6px 25px rgba(0,25,55,.22);
+}
+#top {
+    top:12px; left:1%; right:1%;
+    min-height:65px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+}
+#left {
+    left:1%; top:92px;
+    width:245px;
+    max-height:70vh;
+    overflow:auto;
+}
+#right {
+    right:1%; top:92px;
+    width:250px;
+    max-height:70vh;
+    overflow:auto;
+}
+#bottom {
+    left:1%; right:1%; bottom:10px;
+    min-height:83px;
+    display:flex;
+    justify-content:space-around;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+h2 {margin:0;font-size:19px;letter-spacing:1px;}
+h3 {margin:5px 0 12px;font-size:15px;}
+small {opacity:.8;}
+.metric {
+    background:rgba(255,255,255,.12);
+    border-radius:8px;
+    padding:9px;
+    margin:7px 0;
+    font-size:12px;
+}
+.metric b {float:right;font-size:14px;}
+label {
+    display:block;
+    font-size:12px;
+    margin-top:12px;
+}
+input[type=range] {
+    width:100%;
+    accent-color:#25d8ff;
+}
+button {
+    border:1px solid #8beaff;
+    border-radius:7px;
+    background:#087fb5;
+    color:white;
+    padding:8px 12px;
+    cursor:pointer;
+}
+.green {color:#4dff85;}
+.red {color:#ff6262;}
+#hint {
+    position:absolute;
+    bottom:110px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:4;
+    color:white;
+    background:rgba(0,30,55,.55);
+    padding:7px 13px;
+    border-radius:20px;
+    font-size:11px;
+}
+@media(max-width:700px) {
+    #left {width:190px;top:90px;}
+    #right {width:185px;top:90px;}
+    #bottom {font-size:10px;}
+    h2 {font-size:14px;}
+}
+</style>
+</head>
+<body>
+
+<div id="scene"></div>
+
+<div class="panel" id="top">
+    <div>
+        <h2>🌉 INTELLIGENT BRIDGE MONITOR</h2>
+        <small>STRUCTURAL HEALTH MONITORING SYSTEM</small>
+    </div>
+    <div><span class="green">● SYSTEM ONLINE</span><br>
+    <small>Continuous monitoring</small></div>
+    <div><b>LIVE MONITORING</b><br>
+    <small>3D structural simulation</small></div>
+</div>
+
+<div class="panel" id="left">
+    <h3>🚙 VEHICLE CONTROLS</h3>
+    <label>Vehicle position: <span id="positionText">50%</span></label>
+    <input id="position" type="range" min="0" max="100" value="50">
+
+    <label>Vehicle load: <span id="loadText">20,000 N</span></label>
+    <input id="load" type="range" min="5000" max="50000" step="1000" value="20000">
+
+    <label>Traffic volume</label>
+    <select id="traffic" style="width:100%;padding:7px">
+      <option>Low</option>
+      <option selected>Medium</option>
+      <option>High</option>
+      <option>Very High</option>
+    </select>
+
+    <label>Structural stiffness reduction: <span id="stiffText">0%</span></label>
+    <input id="stiff" type="range" min="0" max="30" value="0">
+
+    <label>Simulated local change: <span id="changeText">0%</span></label>
+    <input id="change" type="range" min="0" max="40" value="0">
+
+    <label>Attention threshold: <span id="thresholdText">5 mm</span></label>
+    <input id="threshold" type="range" min="1" max="20" value="5">
+
+    <hr style="opacity:.25">
+    <button id="play">▶ Move vehicle</button>
+    <button id="reset">Reset</button>
+</div>
+
+<div class="panel" id="right">
+    <h3>📡 SENSOR READINGS</h3>
+    <div class="metric">🟢 Normal sensors <b>55</b></div>
+    <div class="metric">🔴 Additional sensors <b id="extraCount">0 / 66</b></div>
+    <div class="metric">Maximum deflection <b id="deflection">0.00 mm</b></div>
+    <div class="metric">Average strain <b id="strain">0 με</b></div>
+    <div class="metric">Vibration index <b id="vibration">0.00</b></div>
+    <hr style="opacity:.25">
+    <h3>🚨 CHANGE DETECTION</h3>
+    <div id="status" class="green">● Normal monitoring</div>
+    <p id="message" style="font-size:12px;line-height:1.5">
+    No simulated persistent change configured.
+    </p>
+    <hr style="opacity:.25">
+    <h3>📍 SENSOR LEGEND</h3>
+    <div class="metric"><span class="green">●</span> Always-on sensors</div>
+    <div class="metric"><span class="red">●</span> Special-attention sensors</div>
+</div>
+
+<div id="hint">Drag to rotate · Scroll to zoom · Right-click to pan</div>
+
+<div class="panel" id="bottom">
+    <div>🚗 <b>TRAFFIC</b><br><span id="trafficValue">Medium</span></div>
+    <div>📍 <b>VEHICLE LOCATION</b><br><span id="locationValue">20 m</span></div>
+    <div>📊 <b>SENSOR NETWORK</b><br>55 primary · 66 additional</div>
+    <div>📈 <b>MONITORING HISTORY</b><br><span id="historyValue">0 snapshots</span></div>
+    <div><button id="export">Export data CSV</button></div>
+</div>
+
+<script type="module">
+import * as THREE from
+'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { OrbitControls } from
+'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+const container = document.getElementById('scene');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x91d4f5);
+scene.fog = new THREE.Fog(0x91d4f5, 65, 150);
+
+const camera = new THREE.PerspectiveCamera(
+    43, innerWidth/innerHeight, .1, 300
+);
+camera.position.set(31, 23, 39);
+
+const renderer = new THREE.WebGLRenderer({
+    antialias:true,
+    powerPreference:"high-performance"
+});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,5,0);
+controls.enableDamping = true;
+controls.dampingFactor = .06;
+controls.minDistance = 15;
+controls.maxDistance = 95;
+controls.maxPolarAngle = Math.PI*.48;
+
+// LIGHTING
+scene.add(new THREE.HemisphereLight(0xdaf4ff,0x547348,2.0));
+
+const sun = new THREE.DirectionalLight(0xfff4dc,3.0);
+sun.position.set(-25,45,25);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+scene.add(sun);
+
+// MATERIALS
+const concrete = new THREE.MeshStandardMaterial({
+    color:0xc9d1d5, roughness:.72
+});
+const roadMaterial = new THREE.MeshStandardMaterial({
+    color:0x343c43, roughness:.92
+});
+const cableMaterial = new THREE.MeshStandardMaterial({
+    color:0xeaf3f6, metalness:.35, roughness:.3
+});
+const greenMaterial = new THREE.MeshStandardMaterial({
+    color:0x438c43, roughness:1
+});
+
+// WATER
+const water = new THREE.Mesh(
+    new THREE.PlaneGeometry(250,180,1,1),
+    new THREE.MeshStandardMaterial({
+        color:0x168fc3,
+        roughness:.25,
+        metalness:.18
+    })
+);
+water.rotation.x=-Math.PI/2;
+water.position.y=-.6;
+water.receiveShadow=true;
+scene.add(water);
+
+// DISTANT HILLS
+function hill(x,z,sx,sy,sz,color) {
+    const mesh=new THREE.Mesh(
+        new THREE.SphereGeometry(1,32,24),
+        new THREE.MeshStandardMaterial({
+            color,roughness:1
+        })
+    );
+    mesh.position.set(x,sy*.35,z);
+    mesh.scale.set(sx,sy,sz);
+    mesh.castShadow=true;
+    scene.add(mesh);
+}
+for(let i=0;i<22;i++){
+    hill(
+        -65+i*6,
+        30+Math.sin(i*.8)*7,
+        10+Math.random()*6,
+        7+Math.random()*8,
+        12+Math.random()*6,
+        [0x488d43,0x5c9b4c,0x367d40][i%3]
+    );
+    hill(
+        -65+i*6,
+        -48+Math.sin(i*.8)*5,
+        10+Math.random()*6,
+        7+Math.random()*8,
+        12+Math.random()*6,
+        [0x488d43,0x5c9b4c,0x367d40][i%3]
+    );
 }
 
-if (
-    not st.session_state.history
-    or st.session_state.history[-1]["Vehicle position (m)"] != vehicle_position
-    or st.session_state.history[-1]["Peak deflection (mm)"] != peak_deflection
-):
-    st.session_state.history.append(snapshot)
+// BRIDGE DECK
+const deck = new THREE.Mesh(
+    new THREE.BoxGeometry(62,1.0,9),
+    concrete
+);
+deck.position.set(0,8,0);
+deck.castShadow=true;
+deck.receiveShadow=true;
+scene.add(deck);
 
-st.session_state.history = st.session_state.history[-100:]
+// ROAD SURFACE
+const road = new THREE.Mesh(
+    new THREE.BoxGeometry(61.5,.12,7.4),
+    roadMaterial
+);
+road.position.set(0,8.57,0);
+road.receiveShadow=true;
+scene.add(road);
 
-history_df = pd.DataFrame(st.session_state.history)
+// LANE MARKINGS
+for(let z of [-2.4,0,2.4]){
+    const line=new THREE.Mesh(
+        new THREE.BoxGeometry(60,.025,.07),
+        new THREE.MeshBasicMaterial({color:0xf4e9b9})
+    );
+    line.position.set(0,8.65,z);
+    scene.add(line);
+}
 
-# ============================================================
-# BOTTOM PANEL
-# ============================================================
+// BRIDGE EDGE RAILS
+for(let z of [-4.3,4.3]){
+    const rail=new THREE.Mesh(
+        new THREE.BoxGeometry(62,.18,.18),
+        cableMaterial
+    );
+    rail.position.set(0,9.05,z);
+    scene.add(rail);
+}
 
-with st.container(key="bottom_panel"):
-    st.markdown("### 📊 Bridge Monitoring Overview")
+// PIERS
+function cylinderBetween(a,b,r,material){
+    const direction=new THREE.Vector3().subVectors(b,a);
+    const mesh=new THREE.Mesh(
+        new THREE.CylinderGeometry(r,r,direction.length(),12),
+        material
+    );
+    mesh.position.copy(a).add(b).multiplyScalar(.5);
+    mesh.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0,1,0),
+        direction.normalize()
+    );
+    mesh.castShadow=true;
+    scene.add(mesh);
+    return mesh;
+}
 
-    c1, c2, c3, c4 = st.columns([1.2, 1.1, 2.2, 0.9])
+for(let x of [-22,-11,0,11,22]){
+    cylinderBetween(
+        new THREE.Vector3(x,0,0),
+        new THREE.Vector3(x,7.7,0),
+        .7,concrete
+    );
+}
 
-    with c1:
-        st.markdown("**🚙 Traffic Information**")
-        st.metric("Simulated vehicles", f"{vehicle_count:,}")
-        st.caption(f"Traffic level: {traffic_level}")
+// TWO CABLE-STAYED TOWERS
+const towerPositions=[-12,12];
 
-    with c2:
-        st.markdown("**📍 Localization**")
-        st.metric("Vehicle position", f"{vehicle_position:.1f} m")
-        st.caption("Lane: Center")
+for(const tx of towerPositions){
+    for(const z of [-.65,.65]){
+        const tower=new THREE.Mesh(
+            new THREE.BoxGeometry(.8,24,.8),
+            concrete
+        );
+        tower.position.set(tx,19.5,z);
+        tower.castShadow=true;
+        scene.add(tower);
+    }
 
-    with c3:
-        st.markdown("**📈 Sensor History**")
+    const cross=new THREE.Mesh(
+        new THREE.BoxGeometry(1.1,.8,2),
+        concrete
+    );
+    cross.position.set(tx,29.5,0);
+    scene.add(cross);
 
-        if len(history_df) > 1:
-            chart_df = history_df.set_index("Time")[
-                ["Peak deflection (mm)", "Average vibration (g)"]
-            ]
-            st.line_chart(chart_df, height=110)
-        else:
-            st.caption("Move the vehicle or adjust the simulation to build history.")
+    // Cable stays
+    for(let side of [-1,1]){
+        for(let i=1;i<=13;i++){
+            const anchor=tx+side*i*2.0;
+            if(Math.abs(anchor)>30) continue;
 
-    with c4:
-        st.markdown("**📥 Export**")
+            const start=new THREE.Vector3(tx,29.2,0);
+            const end=new THREE.Vector3(anchor,8.8,0);
 
-        csv_data = history_df.to_csv(index=False)
+            const cable=new THREE.Mesh(
+                new THREE.CylinderGeometry(.025,.025,
+                start.distanceTo(end),6),
+                cableMaterial
+            );
+            cable.position.copy(start).add(end).multiplyScalar(.5);
+            cable.quaternion.setFromUnitVectors(
+                new THREE.Vector3(0,1,0),
+                new THREE.Vector3().subVectors(end,start).normalize()
+            );
+            scene.add(cable);
+        }
+    }
+}
 
-        st.download_button(
-            "Export CSV",
-            data=csv_data,
-            file_name="bridge_monitoring_history.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+// SIDE CROSS BRACING
+for(let x of [-20,-8,8,20]){
+    for(let z of [-4.3,4.3]){
+        cylinderBetween(
+            new THREE.Vector3(x,8.9,z),
+            new THREE.Vector3(x+2,8.9,z),
+            .035,cableMaterial
+        );
+    }
+}
 
-# ============================================================
-# FOOTER
-# ============================================================
+// SENSOR MATERIALS
+const greenSensorMaterial=new THREE.MeshStandardMaterial({
+    color:0x00ff54,
+    emissive:0x00a52f,
+    emissiveIntensity:1.4
+});
+const redSensorMaterial=new THREE.MeshStandardMaterial({
+    color:0xff2727,
+    emissive:0xaa0000,
+    emissiveIntensity:1.5
+});
 
-st.markdown("""
-<div style="
-    position:fixed;
-    bottom:2px;
-    right:15px;
-    font-size:9px;
-    color:#FFFFFF;
-    z-index:2000;
-    text-shadow:1px 1px 3px #17445D;">
-Educational simulation only | Not real bridge measurements or a certified safety system
-</div>
-""", unsafe_allow_html=True)
+const normalSensors=[];
+const specialSensors=[];
+
+function makeSensor(x,z,material,radius=.17){
+    const dot=new THREE.Mesh(
+        new THREE.SphereGeometry(radius,12,12),
+        material
+    );
+    dot.position.set(x,9.15,z);
+    scene.add(dot);
+    return dot;
+}
+
+// 55 PRIMARY SENSORS
+for(let i=0;i<11;i++){
+    for(let j=0;j<5;j++){
+        const x=-27+i*5.4;
+        const z=-3.3+j*1.65;
+        normalSensors.push(makeSensor(
+            x,z,greenSensorMaterial,.17
+        ));
+    }
+}
+
+// 66 ADDITIONAL SENSORS
+for(let i=0;i<11;i++){
+    for(let j=0;j<6;j++){
+        const x=-27+i*5.4;
+        const z=-3.6+j*1.44;
+        specialSensors.push(makeSensor(
+            x,z,redSensorMaterial,.19
+        ));
+    }
+}
+specialSensors.forEach(s=>s.visible=false);
+
+// VEHICLE
+const vehicle=new THREE.Group();
+
+const body=new THREE.Mesh(
+    new THREE.BoxGeometry(2.5,1.0,1.35),
+    new THREE.MeshStandardMaterial({
+        color:0xeeeeee,roughness:.4
+    })
+);
+body.position.y=.85;
+body.castShadow=true;
+vehicle.add(body);
+
+const cabin=new THREE.Mesh(
+    new THREE.BoxGeometry(1.1,.8,1.2),
+    new THREE.MeshStandardMaterial({
+        color:0x278ac0,metalness:.25,roughness:.2
+    })
+);
+cabin.position.set(-.35,1.65,0);
+vehicle.add(cabin);
+
+for(let x of [-.8,.8]){
+    for(let z of [-.68,.68]){
+        const wheel=new THREE.Mesh(
+            new THREE.CylinderGeometry(.32,.32,.18,20),
+            new THREE.MeshStandardMaterial({color:0x17191b})
+        );
+        wheel.rotation.x=Math.PI/2;
+        wheel.position.set(x,.4,z);
+        vehicle.add(wheel);
+    }
+}
+vehicle.position.set(0,8.65,0);
+scene.add(vehicle);
+
+// SIMULATION
+const $=id=>document.getElementById(id);
+let moving=false;
+let history=[];
+let lastPosition=50;
+
+function updateSimulation(){
+    const pos=Number($("position").value);
+    const load=Number($("load").value);
+    const stiffness=Number($("stiff").value);
+    const change=Number($("change").value);
+    const threshold=Number($("threshold").value);
+
+    $("positionText").textContent=pos+"%";
+    $("loadText").textContent=load.toLocaleString()+" N";
+    $("stiffText").textContent=stiffness+"%";
+    $("changeText").textContent=change+"%";
+    $("thresholdText").textContent=threshold+" mm";
+
+    vehicle.position.x=-29+(pos/100)*58;
+
+    const loadFactor=load/20000;
+    const deflection=(
+        .7*loadFactor*(1+stiffness/100)+change*.035
+    );
+    const strain=deflection*42.5+12;
+    const vibration=.12+deflection*.035;
+
+    $("deflection").textContent=deflection.toFixed(2)+" mm";
+    $("strain").textContent=strain.toFixed(1)+" με";
+    $("vibration").textContent=vibration.toFixed(3);
+
+    const attention=deflection>=threshold ||
+        change>=5 || stiffness>=5;
+
+    specialSensors.forEach(s=>s.visible=attention);
+    $("extraCount").textContent=attention?"66 / 66":"0 / 66";
+
+    if(attention){
+        $("status").textContent="● SPECIAL ATTENTION ACTIVE";
+        $("status").className="red";
+        $("message").textContent=
+            "The simulated response crossed an attention condition. " +
+            "Additional sensor channels are now displayed.";
+    } else {
+        $("status").textContent="● NORMAL MONITORING";
+        $("status").className="green";
+        $("message").textContent=
+            "No simulated attention condition is currently active.";
+    }
+
+    $("locationValue").textContent=
+        (pos/100*40).toFixed(1)+" m";
+    $("trafficValue").textContent=$("traffic").value;
+
+    if(pos!==lastPosition || history.length===0){
+        history.push({
+            time:new Date().toLocaleTimeString(),
+            position:pos,
+            load:load,
+            deflection:deflection,
+            strain:strain,
+            vibration:vibration,
+            special:attention
+        });
+        lastPosition=pos;
+    }
+    $("historyValue").textContent=history.length+" snapshots";
+}
+
+["position","load","stiff","change","threshold","traffic"].forEach(id=>{
+    $(id).addEventListener("input",updateSimulation);
+    $(id).addEventListener("change",updateSimulation);
+});
+
+$("play").onclick=()=>{
+    moving=!moving;
+    $("play").textContent=moving?"⏸ Pause vehicle":"▶ Move vehicle";
+};
+
+$("reset").onclick=()=>{
+    moving=false;
+    $("position").value=50;
+    $("load").value=20000;
+    $("stiff").value=0;
+    $("change").value=0;
+    updateSimulation();
+};
+
+$("export").onclick=()=>{
+    const rows=[
+        ["Time","Position %","Load N","Deflection mm",
+         "Strain microstrain","Vibration","Special attention"]
+    ];
+    history.forEach(h=>rows.push([
+        h.time,h.position,h.load,h.deflection,
+        h.strain,h.vibration,h.special
+    ]));
+    const csv=rows.map(r=>r.join(",")).join("\\n");
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(
+        new Blob([csv],{type:"text/csv"})
+    );
+    a.download="bridge_monitoring_history.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+};
+
+updateSimulation();
+
+// ANIMATION LOOP
+function animate(){
+    requestAnimationFrame(animate);
+
+    if(moving){
+        let p=Number($("position").value)+.15;
+        if(p>100) p=0;
+        $("position").value=p;
+        updateSimulation();
+    }
+
+    // Gentle water motion
+    water.material.roughness=.23+
+        .025*Math.sin(Date.now()*.0007);
+
+    controls.update();
+    renderer.render(scene,camera);
+}
+animate();
+
+// RESIZE
+window.addEventListener("resize",()=>{
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
+"""
+
+components.html(html, height=1050, scrolling=False)
