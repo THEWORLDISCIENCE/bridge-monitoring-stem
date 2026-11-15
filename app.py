@@ -413,6 +413,272 @@ with tab_history:
     st.caption("Session history may clear when the app restarts. Download the CSV to preserve records. These are simulation snapshots, not real bridge sensor logs.")
 
 st.caption("Educational simulation using a simplified beam model. It is not a real bridge measurement system or a certified structural safety assessment.")
+vehicle_position = st.sidebar.slider(
+    "Vehicle position",
+    min_value=0.0,
+    max_value=30.0,
+    value=15.0,
+    step=0.5
+)
+
+# ==========================================================
+# INTERACTIVE 3D INTELLIGENT BRIDGE - COMBINED MODULE
+# ==========================================================
+
+import streamlit as st
+import numpy as np
+import plotly.graph_objects as go
+
+st.divider()
+st.header("🌉 Interactive Bridge Digital Twin")
+st.caption("Educational simulation — illustrative bridge and sensor data.")
+
+# ---------------- SIDEBAR CONTROLS ----------------
+
+st.sidebar.header("🎛️ Bridge Simulation Controls")
+
+vehicle_position = st.sidebar.slider(
+    "Vehicle position (m)",
+    min_value=0.0,
+    max_value=30.0,
+    value=15.0,
+    step=0.5,
+    key="digital_twin_vehicle_position"
+)
+
+vehicle_weight = st.sidebar.slider(
+    "Vehicle weight (kg)",
+    min_value=1000,
+    max_value=30000,
+    value=10000,
+    step=500,
+    key="digital_twin_vehicle_weight"
+)
+
+special_mode_3d = st.sidebar.toggle(
+    "Activate special attention sensors",
+    value=False,
+    key="digital_twin_special_mode"
+)
+
+# ---------------- BRIDGE DIMENSIONS ----------------
+
+bridge_length = 30
+bridge_width = 4
+deck_height = 2
+
+x = np.linspace(0, bridge_length, 61)
+sensor_positions = np.linspace(0, bridge_length, 11)
+
+# Illustrative response for visualization only
+load_factor = vehicle_weight / 30000
+vehicle_effect = np.exp(
+    -((sensor_positions - vehicle_position) ** 2) / 18
+)
+
+sensor_deflection = (
+    0.2 + 1.5 * load_factor * vehicle_effect
+)
+
+sensor_colors = [
+    "orange" if value > 0.9 else "#22c55e"
+    for value in sensor_deflection
+]
+
+# ---------------- BUILD 3D BRIDGE ----------------
+
+fig = go.Figure()
+
+# Bridge deck
+deck_x = np.tile(x, (2, 1))
+deck_y = np.array([
+    [-bridge_width / 2] * len(x),
+    [bridge_width / 2] * len(x)
+])
+deck_z = np.full_like(deck_x, deck_height)
+
+fig.add_trace(go.Surface(
+    x=deck_x,
+    y=deck_y,
+    z=deck_z,
+    colorscale=[
+        [0, "#334155"],
+        [1, "#64748b"]
+    ],
+    showscale=False,
+    name="Bridge deck",
+    hoverinfo="skip"
+))
+
+# Main girders
+for y_pos in [-1.8, 1.8]:
+    fig.add_trace(go.Scatter3d(
+        x=x,
+        y=[y_pos] * len(x),
+        z=[deck_height - 0.25] * len(x),
+        mode="lines",
+        line=dict(color="#cbd5e1", width=9),
+        showlegend=False,
+        hoverinfo="skip"
+    ))
+
+# Bridge towers
+for tower_x in [10, 20]:
+    for y_pos in [-1.5, 1.5]:
+        fig.add_trace(go.Scatter3d(
+            x=[tower_x, tower_x],
+            y=[y_pos, y_pos],
+            z=[deck_height, 10],
+            mode="lines",
+            line=dict(color="#e2e8f0", width=12),
+            showlegend=False,
+            hoverinfo="skip"
+        ))
+
+# Suspension cables
+for tower_x in [10, 20]:
+    anchors = (
+        np.arange(2, 10, 1.5)
+        if tower_x == 10
+        else np.arange(21, 29, 1.5)
+    )
+
+    for anchor in anchors:
+        fig.add_trace(go.Scatter3d(
+            x=[tower_x, anchor],
+            y=[0, 0],
+            z=[10, deck_height],
+            mode="lines",
+            line=dict(color="#38bdf8", width=2),
+            showlegend=False,
+            hoverinfo="skip"
+        ))
+
+# ---------------- ALWAYS-ON SENSORS ----------------
+
+fig.add_trace(go.Scatter3d(
+    x=sensor_positions,
+    y=[-1.9] * 11,
+    z=[deck_height + 0.35] * 11,
+    mode="markers",
+    marker=dict(
+        size=8,
+        color=sensor_colors,
+        line=dict(color="white", width=1)
+    ),
+    name="Always-on sensors",
+    text=[
+        f"Station {i+1}<br>"
+        f"Illustrative deflection: {sensor_deflection[i]:.3f}"
+        for i in range(11)
+    ],
+    hovertemplate="%{text}<extra></extra>"
+))
+
+# ---------------- SPECIAL ATTENTION SENSORS ----------------
+
+if special_mode_3d:
+    fig.add_trace(go.Scatter3d(
+        x=sensor_positions,
+        y=[1.9] * 11,
+        z=[deck_height + 0.4] * 11,
+        mode="markers",
+        marker=dict(
+            size=8,
+            color="red",
+            symbol="diamond",
+            line=dict(color="white", width=1)
+        ),
+        name="Special attention sensors",
+        text=[
+            f"Special sensor station {i+1}<br>"
+            "Additional monitoring active"
+            for i in range(11)
+        ],
+        hovertemplate="%{text}<extra></extra>"
+    ))
+
+# ---------------- SIMULATED VEHICLE ----------------
+
+fig.add_trace(go.Scatter3d(
+    x=[vehicle_position],
+    y=[0],
+    z=[deck_height + 0.65],
+    mode="markers",
+    marker=dict(
+        size=13,
+        color="#f59e0b",
+        symbol="square",
+        line=dict(color="white", width=2)
+    ),
+    name="Simulated vehicle",
+    text=[f"Vehicle weight: {vehicle_weight:,} kg"],
+    hovertemplate="%{text}<br>Position: %{x:.1f} m<extra></extra>"
+))
+
+# ---------------- DISPLAY ----------------
+
+fig.update_layout(
+    height=650,
+    paper_bgcolor="#0b1220",
+    plot_bgcolor="#0b1220",
+    font=dict(color="white"),
+    scene=dict(
+        bgcolor="#0b1220",
+        xaxis_title="Bridge length (m)",
+        yaxis_title="Bridge width (m)",
+        zaxis_title="Height (m)",
+        aspectratio=dict(x=2.5, y=0.8, z=1),
+        camera=dict(
+            eye=dict(x=1.7, y=1.5, z=1.1)
+        )
+    ),
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="left",
+        x=0
+    ),
+    margin=dict(l=0, r=0, t=40, b=0)
+)
+
+st.plotly_chart(
+    fig,
+    width="stretch",
+    config={
+        "scrollZoom": True,
+        "displayModeBar": True
+    }
+)
+
+# ---------------- SIMULATION SUMMARY ----------------
+
+st.subheader("Live Simulation Readings")
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric(
+    "Vehicle position",
+    f"{vehicle_position:.1f} m"
+)
+
+col2.metric(
+    "Vehicle weight",
+    f"{vehicle_weight:,} kg"
+)
+
+col3.metric(
+    "Active sensor stations",
+    "22" if special_mode_3d else "11"
+)
+
+st.caption(
+    "Green = always-on monitoring. "
+    "Red = additional special-attention sensors. "
+    "Orange = illustrative elevated response. "
+    "This visualization is not a real bridge safety assessment."
+)
 
 
 
