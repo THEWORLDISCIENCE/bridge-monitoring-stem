@@ -11,16 +11,19 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-html, body, [data-testid="stAppViewContainer"],
-[data-testid="stMain"], .block-container {
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-}
-header, footer, #MainMenu {
-    visibility: hidden;
-}
+    #MainMenu, footer, header,
+    [data-testid="stHeader"],
+    [data-testid="stSidebar"],
+    [data-testid="stToolbar"] {
+        display: none !important;
+    }
+    .block-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    iframe {
+        border: 0 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -28,632 +31,608 @@ html = r"""
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-* { box-sizing:border-box; }
-html,body {
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    font-family:Arial,sans-serif;
-    background:#86c9ed;
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Inter, Arial, sans-serif;
+    background: #8ec9ec;
 }
 #scene {
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
 }
+canvas { display: block; }
+
 .panel {
-    position:absolute;
-    z-index:5;
-    color:white;
-    background:rgba(8,42,70,.76);
-    border:1px solid rgba(255,255,255,.32);
-    border-radius:13px;
-    padding:13px;
-    backdrop-filter:blur(12px);
-    box-shadow:0 6px 25px rgba(0,25,55,.22);
+    position: absolute;
+    background: rgba(9, 28, 43, .79);
+    color: white;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 13px;
+    padding: 13px;
+    backdrop-filter: blur(13px);
+    box-shadow: 0 8px 30px rgba(0,0,0,.20);
+    font-size: 12px;
+}
+.panel h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    letter-spacing: .5px;
 }
 #top {
-    top:12px; left:1%; right:1%;
-    min-height:65px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
+    top: 14px;
+    left: 16px;
+    right: 16px;
+    height: 65px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
+.brand { font-size: 19px; font-weight: 800; }
+.sub { color: #b9d4e4; font-size: 10px; margin-top: 4px; }
+.status { color: #75f5a4; font-weight: 700; }
 #left {
-    left:1%; top:92px;
-    width:245px;
-    max-height:70vh;
-    overflow:auto;
+    top: 95px;
+    left: 16px;
+    width: 225px;
 }
 #right {
-    right:1%; top:92px;
-    width:250px;
-    max-height:70vh;
-    overflow:auto;
+    top: 95px;
+    right: 16px;
+    width: 255px;
 }
 #bottom {
-    left:1%; right:1%; bottom:10px;
-    min-height:83px;
-    display:flex;
-    justify-content:space-around;
-    align-items:center;
-    gap:12px;
-    flex-wrap:wrap;
+    left: 16px;
+    right: 16px;
+    bottom: 15px;
+    min-height: 110px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 15px;
 }
-h2 {margin:0;font-size:19px;letter-spacing:1px;}
-h3 {margin:5px 0 12px;font-size:15px;}
-small {opacity:.8;}
 .metric {
-    background:rgba(255,255,255,.12);
-    border-radius:8px;
-    padding:9px;
-    margin:7px 0;
-    font-size:12px;
+    background: rgba(255,255,255,.09);
+    padding: 9px;
+    border-radius: 8px;
+    margin: 7px 0;
 }
-.metric b {float:right;font-size:14px;}
-label {
-    display:block;
-    font-size:12px;
-    margin-top:12px;
+.value {
+    font-size: 20px;
+    font-weight: 800;
+    margin-top: 5px;
 }
-input[type=range] {
-    width:100%;
-    accent-color:#25d8ff;
-}
+.muted { color: #b8cfdd; font-size: 10px; }
+.green { color: #6af2a0; }
+.red { color: #ff7777; }
+.blue { color: #7bd6ff; }
+input[type=range] { width: 100%; accent-color: #63d6ff; }
 button {
-    border:1px solid #8beaff;
-    border-radius:7px;
-    background:#087fb5;
-    color:white;
-    padding:8px 12px;
-    cursor:pointer;
+    border: 0;
+    border-radius: 7px;
+    padding: 9px 11px;
+    cursor: pointer;
+    font-weight: 700;
+    background: #2d9bc9;
+    color: white;
+    margin: 4px 2px;
 }
-.green {color:#4dff85;}
-.red {color:#ff6262;}
-#hint {
-    position:absolute;
-    bottom:110px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:4;
-    color:white;
-    background:rgba(0,30,55,.55);
-    padding:7px 13px;
-    border-radius:20px;
-    font-size:11px;
+button.secondary { background: #425d70; }
+select {
+    width: 100%;
+    padding: 7px;
+    border-radius: 6px;
+    margin: 5px 0;
 }
-@media(max-width:700px) {
-    #left {width:190px;top:90px;}
-    #right {width:185px;top:90px;}
-    #bottom {font-size:10px;}
-    h2 {font-size:14px;}
+.sensor {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+}
+#loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: white;
+    background: #75b5d8;
+    z-index: 20;
+    font-size: 20px;
+    font-weight: 700;
+}
+#message {
+    color: #ffd37b;
+    font-size: 10px;
+    margin-top: 8px;
+}
+@media(max-width: 850px) {
+    #left { width: 185px; }
+    #right { width: 200px; }
+    #bottom { grid-template-columns: 1fr 1fr; }
+    .brand { font-size: 14px; }
 }
 </style>
 </head>
-<body>
 
+<body>
 <div id="scene"></div>
+<div id="loading">Loading 3D bridge environment...</div>
 
 <div class="panel" id="top">
     <div>
-        <h2>🌉 INTELLIGENT BRIDGE MONITOR</h2>
-        <small>STRUCTURAL HEALTH MONITORING SYSTEM</small>
+        <div class="brand">🌉 INTELLIGENT BRIDGE MONITORING</div>
+        <div class="sub">CONTINUOUS STRUCTURAL HEALTH SIMULATION</div>
     </div>
-    <div><span class="green">● SYSTEM ONLINE</span><br>
-    <small>Continuous monitoring</small></div>
-    <div><b>LIVE MONITORING</b><br>
-    <small>3D structural simulation</small></div>
+    <div>
+        <div class="status">● SYSTEM ONLINE</div>
+        <div class="sub" id="mode">NORMAL MONITORING MODE</div>
+    </div>
+    <div class="muted">LIVE SIMULATION · EDUCATIONAL MODEL</div>
 </div>
 
 <div class="panel" id="left">
-    <h3>🚙 VEHICLE CONTROLS</h3>
-    <label>Vehicle position: <span id="positionText">50%</span></label>
-    <input id="position" type="range" min="0" max="100" value="50">
+    <h3>VEHICLE SIMULATION</h3>
 
-    <label>Vehicle load: <span id="loadText">20,000 N</span></label>
-    <input id="load" type="range" min="5000" max="50000" step="1000" value="20000">
+    <div class="muted">Vehicle load</div>
+    <div class="value" id="weightLabel">25 tons</div>
+    <input id="weight" type="range" min="5" max="80" value="25">
 
-    <label>Traffic volume</label>
-    <select id="traffic" style="width:100%;padding:7px">
-      <option>Low</option>
-      <option selected>Medium</option>
-      <option>High</option>
-      <option>Very High</option>
+    <div class="muted">Vehicle speed</div>
+    <div class="value" id="speedLabel">60 km/h</div>
+    <input id="speed" type="range" min="10" max="120" value="60">
+
+    <div class="muted">Traffic volume</div>
+    <select id="traffic">
+        <option value="normal">Normal traffic</option>
+        <option value="busy">Busy traffic</option>
+        <option value="heavy">Heavy traffic</option>
     </select>
 
-    <label>Structural stiffness reduction: <span id="stiffText">0%</span></label>
-    <input id="stiff" type="range" min="0" max="30" value="0">
+    <button id="start">▶ Start vehicle</button>
+    <button class="secondary" id="pause">Ⅱ Pause</button>
 
-    <label>Simulated local change: <span id="changeText">0%</span></label>
-    <input id="change" type="range" min="0" max="40" value="0">
+    <hr style="border-color:#ffffff33">
 
-    <label>Attention threshold: <span id="thresholdText">5 mm</span></label>
-    <input id="threshold" type="range" min="1" max="20" value="5">
+    <h3>SIMULATED CHANGE</h3>
+    <div class="muted">Structural change signal</div>
+    <input id="change" type="range" min="0" max="20" value="0">
+    <div class="value" id="changeLabel">0%</div>
 
-    <hr style="opacity:.25">
-    <button id="play">▶ Move vehicle</button>
-    <button id="reset">Reset</button>
+    <div class="muted">Change location</div>
+    <input id="location" type="range" min="10" max="90" value="50">
+    <div id="message">No simulated change selected.</div>
+
+    <button class="secondary" id="reset">Reset simulation</button>
 </div>
 
 <div class="panel" id="right">
-    <h3>📡 SENSOR READINGS</h3>
-    <div class="metric">🟢 Normal sensors <b>55</b></div>
-    <div class="metric">🔴 Additional sensors <b id="extraCount">0 / 66</b></div>
-    <div class="metric">Maximum deflection <b id="deflection">0.00 mm</b></div>
-    <div class="metric">Average strain <b id="strain">0 με</b></div>
-    <div class="metric">Vibration index <b id="vibration">0.00</b></div>
-    <hr style="opacity:.25">
-    <h3>🚨 CHANGE DETECTION</h3>
-    <div id="status" class="green">● Normal monitoring</div>
-    <p id="message" style="font-size:12px;line-height:1.5">
-    No simulated persistent change configured.
-    </p>
-    <hr style="opacity:.25">
-    <h3>📍 SENSOR LEGEND</h3>
-    <div class="metric"><span class="green">●</span> Always-on sensors</div>
-    <div class="metric"><span class="red">●</span> Special-attention sensors</div>
-</div>
+    <h3>STRUCTURAL SENSOR NETWORK</h3>
+    <div class="sensor"><span>Always-on sensors</span><b class="green">55 ACTIVE</b></div>
+    <div class="sensor"><span>Additional sensors</span><b id="extra" class="muted">66 STANDBY</b></div>
+    <div class="sensor"><span>Deflection</span><b id="deflection">0.00 mm</b></div>
+    <div class="sensor"><span>Strain index</span><b id="strain">0.00</b></div>
+    <div class="sensor"><span>Vibration index</span><b id="vibration">0.00</b></div>
+    <div class="sensor"><span>Temperature</span><b>24.5 °C</b></div>
 
-<div id="hint">Drag to rotate · Scroll to zoom · Right-click to pan</div>
+    <hr style="border-color:#ffffff33">
+
+    <h3>EVENT DETECTION</h3>
+    <div id="alert" class="green">● No event detected</div>
+    <div class="muted" style="margin-top:8px">
+        Additional sensor attention activates when the simulated event threshold is exceeded.
+    </div>
+</div>
 
 <div class="panel" id="bottom">
-    <div>🚗 <b>TRAFFIC</b><br><span id="trafficValue">Medium</span></div>
-    <div>📍 <b>VEHICLE LOCATION</b><br><span id="locationValue">20 m</span></div>
-    <div>📊 <b>SENSOR NETWORK</b><br>55 primary · 66 additional</div>
-    <div>📈 <b>MONITORING HISTORY</b><br><span id="historyValue">0 snapshots</span></div>
-    <div><button id="export">Export data CSV</button></div>
+    <div>
+        <h3>TRAFFIC INFORMATION</h3>
+        <div class="value" id="trafficCount">Normal</div>
+        <div class="muted">Traffic condition</div>
+    </div>
+    <div>
+        <h3>BRIDGE LOCATION</h3>
+        <div class="value">SPAN A — B</div>
+        <div class="muted">Simulated sensor network</div>
+    </div>
+    <div>
+        <h3>SENSOR HISTORY</h3>
+        <div class="value" id="history">0</div>
+        <div class="muted">Recorded simulation updates</div>
+    </div>
+    <div>
+        <h3>CAMERA CONTROLS</h3>
+        <div class="muted">Drag to rotate · Scroll to zoom</div>
+        <button class="secondary" id="camera">Reset camera</button>
+        <button class="secondary" id="csv">Export CSV</button>
+    </div>
 </div>
 
-<script type="module">
-import * as THREE from
-'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { OrbitControls } from
-'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 
-const container = document.getElementById('scene');
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { Sky } from "three/addons/objects/Sky.js";
+
+const MODEL_URL =
+"https://raw.githubusercontent.com/experimentscience/bridge-monitoring-stem/main/assets/cable-stayed-bridge.glb";
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x91d4f5);
-scene.fog = new THREE.Fog(0x91d4f5, 65, 150);
+scene.background = new THREE.Color(0x8ec9ec);
+scene.fog = new THREE.Fog(0x9acbe0, 250, 850);
 
 const camera = new THREE.PerspectiveCamera(
-    43, innerWidth/innerHeight, .1, 300
+    45, window.innerWidth/window.innerHeight, 0.1, 2000
 );
-camera.position.set(31, 23, 39);
+camera.position.set(110, 85, 150);
 
 const renderer = new THREE.WebGLRenderer({
-    antialias:true,
-    powerPreference:"high-performance"
+    antialias: true,
+    alpha: false
 });
-renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.15;
-container.appendChild(renderer.domElement);
+document.getElementById("scene").appendChild(renderer.domElement);
 
-const controls = new OrbitControls(camera,renderer.domElement);
-controls.target.set(0,5,0);
+const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = .06;
-controls.minDistance = 15;
-controls.maxDistance = 95;
-controls.maxPolarAngle = Math.PI*.48;
+controls.target.set(0, 15, 0);
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.minDistance = 35;
+controls.maxDistance = 420;
 
-// LIGHTING
-scene.add(new THREE.HemisphereLight(0xdaf4ff,0x547348,2.0));
+scene.add(new THREE.HemisphereLight(0xd9f1ff, 0x52714a, 2.0));
 
-const sun = new THREE.DirectionalLight(0xfff4dc,3.0);
-sun.position.set(-25,45,25);
+const sun = new THREE.DirectionalLight(0xfff0d7, 3.3);
+sun.position.set(-100, 180, 90);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048,2048);
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -250;
+sun.shadow.camera.right = 250;
+sun.shadow.camera.top = 250;
+sun.shadow.camera.bottom = -250;
 scene.add(sun);
 
-// MATERIALS
-const concrete = new THREE.MeshStandardMaterial({
-    color:0xc9d1d5, roughness:.72
-});
-const roadMaterial = new THREE.MeshStandardMaterial({
-    color:0x343c43, roughness:.92
-});
-const cableMaterial = new THREE.MeshStandardMaterial({
-    color:0xeaf3f6, metalness:.35, roughness:.3
-});
-const greenMaterial = new THREE.MeshStandardMaterial({
-    color:0x438c43, roughness:1
-});
+const sky = new Sky();
+sky.scale.setScalar(10000);
+sky.material.uniforms.turbidity.value = 7;
+sky.material.uniforms.rayleigh.value = 2;
+sky.material.uniforms.mieCoefficient.value = 0.004;
+sky.material.uniforms.mieDirectionalG.value = 0.8;
+scene.add(sky);
 
-// WATER
 const water = new THREE.Mesh(
-    new THREE.PlaneGeometry(250,180,1,1),
-    new THREE.MeshStandardMaterial({
-        color:0x168fc3,
-        roughness:.25,
-        metalness:.18
+    new THREE.PlaneGeometry(2000, 2000),
+    new THREE.MeshPhysicalMaterial({
+        color: 0x268fbd,
+        roughness: 0.24,
+        metalness: 0.18,
+        clearcoat: 0.8
     })
 );
-water.rotation.x=-Math.PI/2;
-water.position.y=-.6;
-water.receiveShadow=true;
+water.rotation.x = -Math.PI / 2;
+water.position.y = -1.2;
+water.receiveShadow = true;
 scene.add(water);
 
-// DISTANT HILLS
-function hill(x,z,sx,sy,sz,color) {
-    const mesh=new THREE.Mesh(
-        new THREE.SphereGeometry(1,32,24),
+const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(2000, 250),
+    new THREE.MeshStandardMaterial({
+        color: 0x55864a,
+        roughness: 1
+    })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.set(0, -1.0, -300);
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Distant green hills
+for (let i = 0; i < 18; i++) {
+    const hill = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 32, 24),
         new THREE.MeshStandardMaterial({
-            color,roughness:1
+            color: i % 2 ? 0x588c54 : 0x719d60,
+            roughness: 1
         })
     );
-    mesh.position.set(x,sy*.35,z);
-    mesh.scale.set(sx,sy,sz);
-    mesh.castShadow=true;
-    scene.add(mesh);
-}
-for(let i=0;i<22;i++){
-    hill(
-        -65+i*6,
-        30+Math.sin(i*.8)*7,
-        10+Math.random()*6,
-        7+Math.random()*8,
-        12+Math.random()*6,
-        [0x488d43,0x5c9b4c,0x367d40][i%3]
-    );
-    hill(
-        -65+i*6,
-        -48+Math.sin(i*.8)*5,
-        10+Math.random()*6,
-        7+Math.random()*8,
-        12+Math.random()*6,
-        [0x488d43,0x5c9b4c,0x367d40][i%3]
-    );
+    hill.scale.set(35 + Math.random()*45, 15 + Math.random()*25, 28);
+    hill.position.set(-380 + i*45, 4, -260 - Math.random()*90);
+    scene.add(hill);
 }
 
-// BRIDGE DECK
-const deck = new THREE.Mesh(
-    new THREE.BoxGeometry(62,1.0,9),
-    concrete
-);
-deck.position.set(0,8,0);
-deck.castShadow=true;
-deck.receiveShadow=true;
-scene.add(deck);
+const bridgeGroup = new THREE.Group();
+scene.add(bridgeGroup);
 
-// ROAD SURFACE
-const road = new THREE.Mesh(
-    new THREE.BoxGeometry(61.5,.12,7.4),
-    roadMaterial
-);
-road.position.set(0,8.57,0);
-road.receiveShadow=true;
-scene.add(road);
+const alwaysMarkers = new THREE.Group();
+const extraMarkers = new THREE.Group();
+scene.add(alwaysMarkers, extraMarkers);
 
-// LANE MARKINGS
-for(let z of [-2.4,0,2.4]){
-    const line=new THREE.Mesh(
-        new THREE.BoxGeometry(60,.025,.07),
-        new THREE.MeshBasicMaterial({color:0xf4e9b9})
+function makeMarker(color, radius=0.75) {
+    const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 16, 16),
+        new THREE.MeshStandardMaterial({
+            color,
+            emissive: color,
+            emissiveIntensity: 1.1,
+            roughness: 0.25
+        })
     );
-    line.position.set(0,8.65,z);
-    scene.add(line);
-}
-
-// BRIDGE EDGE RAILS
-for(let z of [-4.3,4.3]){
-    const rail=new THREE.Mesh(
-        new THREE.BoxGeometry(62,.18,.18),
-        cableMaterial
-    );
-    rail.position.set(0,9.05,z);
-    scene.add(rail);
-}
-
-// PIERS
-function cylinderBetween(a,b,r,material){
-    const direction=new THREE.Vector3().subVectors(b,a);
-    const mesh=new THREE.Mesh(
-        new THREE.CylinderGeometry(r,r,direction.length(),12),
-        material
-    );
-    mesh.position.copy(a).add(b).multiplyScalar(.5);
-    mesh.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0,1,0),
-        direction.normalize()
-    );
-    mesh.castShadow=true;
-    scene.add(mesh);
+    mesh.castShadow = true;
     return mesh;
 }
 
-for(let x of [-22,-11,0,11,22]){
-    cylinderBetween(
-        new THREE.Vector3(x,0,0),
-        new THREE.Vector3(x,7.7,0),
-        .7,concrete
-    );
+function addSensorMarkers() {
+    alwaysMarkers.clear();
+    extraMarkers.clear();
+
+    for (let i=0; i<11; i++) {
+        const x = -85 + i*17;
+        const green = makeMarker(0x27ff8b, 0.85);
+        green.position.set(x, 10, 0);
+        alwaysMarkers.add(green);
+
+        const red = makeMarker(0xff3434, 0.65);
+        red.position.set(x, 13, 2);
+        extraMarkers.add(red);
+    }
+
+    for (let x of [-45, 45]) {
+        const m = makeMarker(0x27ff8b, 1);
+        m.position.set(x, 38, 0);
+        alwaysMarkers.add(m);
+    }
+    extraMarkers.visible = false;
 }
 
-// TWO CABLE-STAYED TOWERS
-const towerPositions=[-12,12];
+addSensorMarkers();
 
-for(const tx of towerPositions){
-    for(const z of [-.65,.65]){
-        const tower=new THREE.Mesh(
-            new THREE.BoxGeometry(.8,24,.8),
-            concrete
+let bridgeLoaded = false;
+let bridgeLength = 190;
+let vehicle;
+let vehicleMoving = false;
+let vehiclePosition = -105;
+let historyCount = 0;
+let csvRows = [["time","vehicle_load_tons","speed_kmh",
+    "deflection_mm","change_percent","attention_mode"]];
+
+const loader = new GLTFLoader();
+
+loader.load(
+    MODEL_URL,
+    (gltf) => {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+
+        const longest = Math.max(size.x, size.y, size.z);
+        const scale = 200 / longest;
+        model.scale.setScalar(scale);
+
+        model.position.sub(center.multiplyScalar(scale));
+
+        // Place the model's lowest point on the scene ground.
+        const scaledBox = new THREE.Box3().setFromObject(model);
+        model.position.y -= scaledBox.min.y;
+
+        model.traverse((obj) => {
+            if (obj.isMesh) {
+                obj.castShadow = true;
+                obj.receiveShadow = true;
+                if (obj.material) {
+                    obj.material.needsUpdate = true;
+                }
+            }
+        });
+
+        bridgeGroup.add(model);
+        bridgeLoaded = true;
+
+        const finalBox = new THREE.Box3().setFromObject(model);
+        const finalSize = finalBox.getSize(new THREE.Vector3());
+        bridgeLength = Math.max(finalSize.x, finalSize.z);
+
+        controls.target.set(0, finalSize.y * 0.45, 0);
+        camera.position.set(
+            bridgeLength * 0.45,
+            finalSize.y * 1.8,
+            bridgeLength * 0.65
         );
-        tower.position.set(tx,19.5,z);
-        tower.castShadow=true;
-        scene.add(tower);
+        controls.update();
+
+        document.getElementById("loading").style.display = "none";
+    },
+    undefined,
+    (error) => {
+        document.getElementById("loading").innerHTML =
+        "Could not load the bridge model. Check that the GLB file is committed at assets/cable-stayed-bridge.glb in the main branch.";
+        console.error(error);
     }
+);
 
-    const cross=new THREE.Mesh(
-        new THREE.BoxGeometry(1.1,.8,2),
-        concrete
-    );
-    cross.position.set(tx,29.5,0);
-    scene.add(cross);
+// Simple simulated vehicle
+const vehicleGroup = new THREE.Group();
 
-    // Cable stays
-    for(let side of [-1,1]){
-        for(let i=1;i<=13;i++){
-            const anchor=tx+side*i*2.0;
-            if(Math.abs(anchor)>30) continue;
-
-            const start=new THREE.Vector3(tx,29.2,0);
-            const end=new THREE.Vector3(anchor,8.8,0);
-
-            const cable=new THREE.Mesh(
-                new THREE.CylinderGeometry(.025,.025,
-                start.distanceTo(end),6),
-                cableMaterial
-            );
-            cable.position.copy(start).add(end).multiplyScalar(.5);
-            cable.quaternion.setFromUnitVectors(
-                new THREE.Vector3(0,1,0),
-                new THREE.Vector3().subVectors(end,start).normalize()
-            );
-            scene.add(cable);
-        }
-    }
-}
-
-// SIDE CROSS BRACING
-for(let x of [-20,-8,8,20]){
-    for(let z of [-4.3,4.3]){
-        cylinderBetween(
-            new THREE.Vector3(x,8.9,z),
-            new THREE.Vector3(x+2,8.9,z),
-            .035,cableMaterial
-        );
-    }
-}
-
-// SENSOR MATERIALS
-const greenSensorMaterial=new THREE.MeshStandardMaterial({
-    color:0x00ff54,
-    emissive:0x00a52f,
-    emissiveIntensity:1.4
-});
-const redSensorMaterial=new THREE.MeshStandardMaterial({
-    color:0xff2727,
-    emissive:0xaa0000,
-    emissiveIntensity:1.5
-});
-
-const normalSensors=[];
-const specialSensors=[];
-
-function makeSensor(x,z,material,radius=.17){
-    const dot=new THREE.Mesh(
-        new THREE.SphereGeometry(radius,12,12),
-        material
-    );
-    dot.position.set(x,9.15,z);
-    scene.add(dot);
-    return dot;
-}
-
-// 55 PRIMARY SENSORS
-for(let i=0;i<11;i++){
-    for(let j=0;j<5;j++){
-        const x=-27+i*5.4;
-        const z=-3.3+j*1.65;
-        normalSensors.push(makeSensor(
-            x,z,greenSensorMaterial,.17
-        ));
-    }
-}
-
-// 66 ADDITIONAL SENSORS
-for(let i=0;i<11;i++){
-    for(let j=0;j<6;j++){
-        const x=-27+i*5.4;
-        const z=-3.6+j*1.44;
-        specialSensors.push(makeSensor(
-            x,z,redSensorMaterial,.19
-        ));
-    }
-}
-specialSensors.forEach(s=>s.visible=false);
-
-// VEHICLE
-const vehicle=new THREE.Group();
-
-const body=new THREE.Mesh(
-    new THREE.BoxGeometry(2.5,1.0,1.35),
+const body = new THREE.Mesh(
+    new THREE.BoxGeometry(9, 3, 4),
     new THREE.MeshStandardMaterial({
-        color:0xeeeeee,roughness:.4
+        color: 0xe6e9ed,
+        metalness: 0.35,
+        roughness: 0.35
     })
 );
-body.position.y=.85;
-body.castShadow=true;
-vehicle.add(body);
+body.position.y = 2;
+vehicleGroup.add(body);
 
-const cabin=new THREE.Mesh(
-    new THREE.BoxGeometry(1.1,.8,1.2),
+const cabin = new THREE.Mesh(
+    new THREE.BoxGeometry(4, 2, 3.4),
     new THREE.MeshStandardMaterial({
-        color:0x278ac0,metalness:.25,roughness:.2
+        color: 0x347fa4,
+        metalness: 0.5,
+        roughness: 0.2
     })
 );
-cabin.position.set(-.35,1.65,0);
-vehicle.add(cabin);
+cabin.position.set(-1, 4.2, 0);
+vehicleGroup.add(cabin);
 
-for(let x of [-.8,.8]){
-    for(let z of [-.68,.68]){
-        const wheel=new THREE.Mesh(
-            new THREE.CylinderGeometry(.32,.32,.18,20),
-            new THREE.MeshStandardMaterial({color:0x17191b})
-        );
-        wheel.rotation.x=Math.PI/2;
-        wheel.position.set(x,.4,z);
-        vehicle.add(wheel);
-    }
-}
-vehicle.position.set(0,8.65,0);
+vehicle = vehicleGroup;
 scene.add(vehicle);
 
-// SIMULATION
-const $=id=>document.getElementById(id);
-let moving=false;
-let history=[];
-let lastPosition=50;
+const $ = id => document.getElementById(id);
 
-function updateSimulation(){
-    const pos=Number($("position").value);
-    const load=Number($("load").value);
-    const stiffness=Number($("stiff").value);
-    const change=Number($("change").value);
-    const threshold=Number($("threshold").value);
+$("start").onclick = () => vehicleMoving = true;
+$("pause").onclick = () => vehicleMoving = false;
 
-    $("positionText").textContent=pos+"%";
-    $("loadText").textContent=load.toLocaleString()+" N";
-    $("stiffText").textContent=stiffness+"%";
-    $("changeText").textContent=change+"%";
-    $("thresholdText").textContent=threshold+" mm";
+$("weight").oninput = e =>
+    $("weightLabel").textContent = e.target.value + " tons";
 
-    vehicle.position.x=-29+(pos/100)*58;
+$("speed").oninput = e =>
+    $("speedLabel").textContent = e.target.value + " km/h";
 
-    const loadFactor=load/20000;
-    const deflection=(
-        .7*loadFactor*(1+stiffness/100)+change*.035
-    );
-    const strain=deflection*42.5+12;
-    const vibration=.12+deflection*.035;
+$("change").oninput = e =>
+    $("changeLabel").textContent = e.target.value + "%";
 
-    $("deflection").textContent=deflection.toFixed(2)+" mm";
-    $("strain").textContent=strain.toFixed(1)+" με";
-    $("vibration").textContent=vibration.toFixed(3);
+$("traffic").onchange = e =>
+    $("trafficCount").textContent =
+        e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1);
 
-    const attention=deflection>=threshold ||
-        change>=5 || stiffness>=5;
+$("reset").onclick = () => {
+    vehicleMoving = false;
+    vehiclePosition = -105;
+    $("change").value = 0;
+    $("changeLabel").textContent = "0%";
+    $("alert").textContent = "● No event detected";
+    $("alert").className = "green";
+    $("extra").textContent = "66 STANDBY";
+    $("extra").className = "muted";
+    extraMarkers.visible = false;
+};
 
-    specialSensors.forEach(s=>s.visible=attention);
-    $("extraCount").textContent=attention?"66 / 66":"0 / 66";
+$("camera").onclick = () => {
+    camera.position.set(110, 85, 150);
+    controls.target.set(0, 15, 0);
+    controls.update();
+};
 
-    if(attention){
-        $("status").textContent="● SPECIAL ATTENTION ACTIVE";
-        $("status").className="red";
-        $("message").textContent=
-            "The simulated response crossed an attention condition. " +
-            "Additional sensor channels are now displayed.";
+$("csv").onclick = () => {
+    const csv = csvRows.map(row => row.join(",")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bridge-monitoring-history.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
+let lastRecord = 0;
+
+function updateSimulation(dt) {
+    const weight = Number($("weight").value);
+    const speed = Number($("speed").value);
+    const change = Number($("change").value);
+    const location = Number($("location").value);
+    const traffic = $("traffic").value;
+
+    if (vehicleMoving) {
+        vehiclePosition += dt * (speed / 18);
+        if (vehiclePosition > 105) vehiclePosition = -105;
+    }
+
+    vehicle.position.set(vehiclePosition, 0, 0);
+
+    const distance = Math.abs(vehiclePosition);
+    const loadFactor = Math.max(0, 1 - distance/105);
+    const deflection = (weight/25) * loadFactor * 1.8;
+    const vibration = loadFactor * (speed/60) * 1.4;
+    const strain = deflection * 0.75;
+
+    $("deflection").textContent = deflection.toFixed(2) + " mm";
+    $("vibration").textContent = vibration.toFixed(2);
+    $("strain").textContent = strain.toFixed(2);
+
+    const triggered = deflection > 1.2 || change >= 5;
+
+    if (triggered) {
+        $("mode").textContent = "SPECIAL ATTENTION MODE";
+        $("extra").textContent = "66 ACTIVE";
+        $("extra").className = "red";
+        $("alert").textContent =
+            change >= 5
+            ? "● Persistent change signal detected"
+            : "● Temporary load event detected";
+        $("alert").className = "red";
+        extraMarkers.visible = true;
     } else {
-        $("status").textContent="● NORMAL MONITORING";
-        $("status").className="green";
-        $("message").textContent=
-            "No simulated attention condition is currently active.";
+        $("mode").textContent = "NORMAL MONITORING MODE";
+        $("extra").textContent = "66 STANDBY";
+        $("extra").className = "muted";
+        $("alert").textContent = "● No event detected";
+        $("alert").className = "green";
+        extraMarkers.visible = false;
     }
 
-    $("locationValue").textContent=
-        (pos/100*40).toFixed(1)+" m";
-    $("trafficValue").textContent=$("traffic").value;
+    $("message").textContent = change > 0
+        ? "Simulated structural change at " + location + "% of span."
+        : "No simulated change selected.";
 
-    if(pos!==lastPosition || history.length===0){
-        history.push({
-            time:new Date().toLocaleTimeString(),
-            position:pos,
-            load:load,
-            deflection:deflection,
-            strain:strain,
-            vibration:vibration,
-            special:attention
-        });
-        lastPosition=pos;
+    const markerIndex = Math.round(location/10);
+    extraMarkers.children.forEach((marker, i) => {
+        marker.material.color.set(i === markerIndex ? 0xffcc33 : 0xff3434);
+        marker.material.emissive.set(i === markerIndex ? 0xffcc33 : 0xff3434);
+    });
+
+    const now = performance.now();
+    if (now - lastRecord > 1000) {
+        lastRecord = now;
+        historyCount++;
+        $("history").textContent = historyCount;
+        csvRows.push([
+            new Date().toISOString(),
+            weight, speed, deflection.toFixed(3),
+            change, triggered ? "Special attention" : "Normal"
+        ]);
     }
-    $("historyValue").textContent=history.length+" snapshots";
 }
 
-["position","load","stiff","change","threshold","traffic"].forEach(id=>{
-    $(id).addEventListener("input",updateSimulation);
-    $(id).addEventListener("change",updateSimulation);
-});
+let previous = performance.now();
 
-$("play").onclick=()=>{
-    moving=!moving;
-    $("play").textContent=moving?"⏸ Pause vehicle":"▶ Move vehicle";
-};
-
-$("reset").onclick=()=>{
-    moving=false;
-    $("position").value=50;
-    $("load").value=20000;
-    $("stiff").value=0;
-    $("change").value=0;
-    updateSimulation();
-};
-
-$("export").onclick=()=>{
-    const rows=[
-        ["Time","Position %","Load N","Deflection mm",
-         "Strain microstrain","Vibration","Special attention"]
-    ];
-    history.forEach(h=>rows.push([
-        h.time,h.position,h.load,h.deflection,
-        h.strain,h.vibration,h.special
-    ]));
-    const csv=rows.map(r=>r.join(",")).join("\\n");
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(
-        new Blob([csv],{type:"text/csv"})
-    );
-    a.download="bridge_monitoring_history.csv";
-    a.click();
-    URL.revokeObjectURL(a.href);
-};
-
-updateSimulation();
-
-// ANIMATION LOOP
-function animate(){
+function animate() {
     requestAnimationFrame(animate);
+    const now = performance.now();
+    const dt = Math.min((now-previous)/1000, 0.05);
+    previous = now;
 
-    if(moving){
-        let p=Number($("position").value)+.15;
-        if(p>100) p=0;
-        $("position").value=p;
-        updateSimulation();
-    }
-
-    // Gentle water motion
-    water.material.roughness=.23+
-        .025*Math.sin(Date.now()*.0007);
-
+    updateSimulation(dt);
     controls.update();
-    renderer.render(scene,camera);
+    renderer.render(scene, camera);
 }
 animate();
 
-// RESIZE
-window.addEventListener("resize",()=>{
-    camera.aspect=innerWidth/innerHeight;
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth,innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 </script>
 </body>
