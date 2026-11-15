@@ -3,23 +3,22 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 from datetime import datetime
 import io
 
 # ============================================================
-# PAGE CONFIGURATION
+# INTELLIGENT BRIDGE MONITORING — SINGLE DASHBOARD
 # ============================================================
 
 st.set_page_config(
     page_title="Intelligent Bridge Monitoring",
     page_icon="🌉",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# ============================================================
-# FUTURISTIC DASHBOARD STYLING
-# ============================================================
+# -------------------- DESIGN --------------------
 
 st.markdown("""
 <style>
@@ -28,1517 +27,846 @@ st.markdown("""
 html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
 }
-
 .stApp {
-    background:
-        radial-gradient(ellipse at 15% 0%, #142b48 0%, transparent 42%),
-        linear-gradient(145deg, #07111f 0%, #0b1728 55%, #101d30 100%);
-    color: #eaf4ff;
+    background: linear-gradient(145deg, #02050B 0%, #07152E 55%, #0B1C3C 100%);
+    color: #E9F7FE;
 }
-
-header[data-testid="stHeader"] {
-    background: transparent;
-}
-
 .block-container {
-    padding-top: 1.4rem;
-    padding-bottom: 2rem;
     max-width: 1600px;
+    padding-top: 1.2rem;
+    padding-bottom: 2rem;
 }
-
 h1, h2, h3 {
-    color: #f2f8ff !important;
-    font-weight: 700 !important;
+    color: #E9F7FE !important;
 }
-
-p, label, span {
-    color: #c5d5e8;
+.metric-card {
+    background: linear-gradient(135deg, #0F2158, #102D65);
+    border: 1px solid #3255BA;
+    border-radius: 13px;
+    padding: 15px 18px;
+    min-height: 95px;
 }
-
-div[data-testid="stMetric"] {
-    background: linear-gradient(145deg, #142a43, #0d1d30);
-    border: 1px solid #254766;
-    padding: 17px;
+.metric-label {
+    color: #9CBEF5;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.metric-value {
+    color: #FFFFFF;
+    font-size: 27px;
+    font-weight: 800;
+    margin-top: 5px;
+}
+.metric-note {
+    color: #9CBEF5;
+    font-size: 11px;
+}
+.panel {
+    background: rgba(15, 33, 88, 0.72);
+    border: 1px solid rgba(91, 125, 210, 0.45);
     border-radius: 14px;
-    box-shadow: 0 5px 22px #00000030;
+    padding: 16px;
 }
-
-div[data-testid="stMetricLabel"] {
-    color: #9db7d2 !important;
+.small-label {
+    color: #9CBEF5;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
-
-div[data-testid="stMetricValue"] {
-    color: #eaf6ff !important;
+.status-good {
+    color: #45E59B;
+    font-weight: 700;
 }
-
-.stTabs [data-baseweb="tab-list"] {
-    gap: 9px;
-    background: #0d1c2e;
-    padding: 8px;
-    border-radius: 12px;
+.status-alert {
+    color: #FF6565;
+    font-weight: 700;
 }
-
-.stTabs [data-baseweb="tab"] {
-    background: #14283e;
-    border-radius: 9px;
-    color: #c6d8ec;
-    padding: 10px 18px;
+div[data-testid="stSlider"] label,
+div[data-testid="stNumberInput"] label {
+    color: #C7D9FA !important;
 }
-
-.stTabs [aria-selected="true"] {
-    background: #155c78 !important;
-    color: white !important;
-}
-
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    border-color: #29435d;
-}
-
-.stButton button, .stDownloadButton button {
-    background: linear-gradient(90deg, #087e9e, #1767a5);
+.stButton button {
+    background: #3255BA;
     color: white;
-    border: 0;
-    border-radius: 9px;
-    font-weight: 600;
+    border: 1px solid #7194F0;
+    border-radius: 8px;
 }
-
 hr {
-    border-color: #29435d;
+    border-color: #263D73;
 }
-
-div[data-testid="stAlert"] {
-    border-radius: 12px;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# HEADER
-# ============================================================
+# -------------------- HEADER --------------------
 
 st.markdown("""
-<div style="
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    gap:15px;
-    padding:12px 4px 20px 4px;
-">
-    <div>
-        <div style="
-            color:#48d8f0;
-            font-size:12px;
-            letter-spacing:3px;
-            font-weight:700;
-        ">SMART INFRASTRUCTURE • LIVE SIMULATION</div>
-
-        <div style="
-            color:#f0f7ff;
-            font-size:32px;
-            font-weight:800;
-            margin-top:5px;
-        ">INTELLIGENT BRIDGE MONITORING</div>
-
-        <div style="color:#91abc5; font-size:13px; margin-top:5px;">
-            Structural intelligence • Adaptive sensing • Predictive monitoring
-        </div>
+<div style="display:flex;justify-content:space-between;align-items:center;
+padding:8px 4px 18px 4px;">
+  <div>
+    <div style="font-size:12px;color:#9CBEF5;letter-spacing:3px;">
+      STRUCTURAL HEALTH DIGITAL TWIN
     </div>
-
-    <div style="
-        background:#103c43;
-        border:1px solid #1a9c8b;
-        color:#5fffd0;
-        padding:10px 16px;
-        border-radius:10px;
-        font-size:12px;
-        font-weight:700;
-    ">● SIMULATION ONLINE</div>
+    <div style="font-size:30px;font-weight:800;color:#E9F7FE;">
+      🌉 INTELLIGENT BRIDGE MONITORING
+    </div>
+    <div style="color:#8791A4;font-size:12px;">
+      Continuous sensing · Event-triggered adaptive attention · Structural change detection
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div style="color:#45E59B;font-weight:700;">● SYSTEM ONLINE</div>
+    <div style="color:#9CBEF5;font-size:12px;">SIMULATION ENVIRONMENT</div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# SIDEBAR CONTROLS
-# ============================================================
+# -------------------- CONTROLS --------------------
 
-st.sidebar.markdown("## ⚙️ SIMULATION CONTROL")
-st.sidebar.caption("Adjust the bridge and traffic conditions.")
+with st.expander("⚙️ SIMULATION CONTROLS", expanded=True):
+    c1, c2, c3, c4 = st.columns(4)
 
-st.sidebar.markdown("### 🚗 Traffic")
+    with c1:
+        vehicle_weight = st.slider(
+            "Vehicle weight (N)", 5000, 50000, 20000, 1000
+        )
+        vehicle_position = st.slider(
+            "Vehicle position (m)", 0.0, 30.0, 15.0, 0.5
+        )
 
-vehicle_weight = st.sidebar.slider(
-    "Vehicle weight (N)",
-    5000, 50000, 20000, 1000
-)
+    with c2:
+        axle_count = st.selectbox("Number of axles", [2, 3, 4, 5], index=1)
+        axle_spacing = st.slider(
+            "Axle spacing (m)", 1.0, 5.0, 2.5, 0.5
+        )
 
-axles = st.sidebar.slider(
-    "Number of axles",
-    2, 6, 3
-)
+    with c3:
+        trigger_threshold = st.slider(
+            "Attention trigger (mm)", 0.1, 5.0, 1.0, 0.1
+        )
+        stiffness_change = st.slider(
+            "Simulated stiffness reduction (%)", 0, 40, 0, 1
+        )
 
-axle_spacing = st.sidebar.slider(
-    "Axle spacing (m)",
-    1.0, 5.0, 2.0, 0.5
-)
+    with c4:
+        change_location = st.slider(
+            "Change location (m)", 2.0, 28.0, 15.0, 0.5
+        )
+        local_change = st.slider(
+            "Local change signal (%)", 0, 50, 0, 1
+        )
 
-vehicle_position = st.sidebar.slider(
-    "Vehicle position (m)",
-    0.0, 30.0, 15.0, 0.5
-)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 🏗️ Structural conditions")
-
-stiffness_reduction = st.sidebar.slider(
-    "Global stiffness reduction (%)",
-    0, 30, 0
-)
-
-local_change = st.sidebar.slider(
-    "Local change signal (%)",
-    0, 40, 0
-)
-
-change_location = st.sidebar.slider(
-    "Simulated change location (m)",
-    2.0, 28.0, 15.0, 0.5
-)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 🚨 Attention settings")
-
-attention_threshold = st.sidebar.slider(
-    "Deflection attention threshold (mm)",
-    0.1, 5.0, 1.0, 0.1
-)
-
-st.sidebar.caption(
-    "The simulation activates special attention when "
-    "the response exceeds the selected threshold or "
-    "a persistent baseline difference is detected."
-)
-
-# ============================================================
-# BRIDGE MODEL
-# ============================================================
+# -------------------- BRIDGE MODEL --------------------
 
 L = 30.0
 E = 200e9
 I = 0.08
-
 x = np.linspace(0, L, 401)
 stations = np.linspace(2, 28, 11)
 
-total_load = vehicle_weight
-load_per_axle = total_load / axles
-
-axle_positions = [
-    vehicle_position - i * axle_spacing
-    for i in range(axles)
-]
-
-def point_load_deflection(P, a, x_values):
-    """Educational simply-supported beam point-load model."""
-
-    a = float(np.clip(a, 0.0, L))
-    b = L - a
-
-    result = np.zeros_like(x_values, dtype=float)
-
-    if a <= 0.001 or b <= 0.001:
-        return result
-
-    left = x_values <= a
-    right = ~left
-
-    result[left] = (
-        P * b * x_values[left] /
-        (6 * L * E * I)
-    ) * (
-        L**2 - b**2 - x_values[left]**2
-    )
-
-    result[right] = (
-        P * a * (L - x_values[right]) /
-        (6 * L * E * I)
-    ) * (
-        L**2 - a**2 - (L - x_values[right])**2
-    )
-
-    return result
-
-
-def bridge_response(positions):
-    """Combine the responses from all vehicle axles."""
-
-    deflection = np.zeros_like(x)
+def beam_response(position, inertia):
+    """Simplified educational simply-supported beam response."""
     moment = np.zeros_like(x)
+    deflection = np.zeros_like(x)
 
-    for position in positions:
-        if 0 <= position <= L:
-            a = position
-            b = L - a
-
-            deflection += point_load_deflection(
-                load_per_axle, a, x
-            )
-
-            moment += np.where(
-                x <= a,
-                load_per_axle * b * x / L,
-                load_per_axle * a * (L - x) / L
-            )
-
-    return deflection, moment
-
-
-baseline_deflection, baseline_moment = bridge_response(
-    axle_positions
-)
-
-# ============================================================
-# STRUCTURAL CHANGE MODEL
-# ============================================================
-
-global_factor = max(
-    0.25, 1 - stiffness_reduction / 100
-)
-
-distance_from_change = np.abs(x - change_location)
-
-local_influence = np.exp(
-    -(distance_from_change / 3.0) ** 2
-)
-
-local_factor = (
-    1 - (local_change / 100) * local_influence
-)
-
-local_factor = np.clip(local_factor, 0.3, 1.0)
-
-current_deflection = (
-    baseline_deflection /
-    (global_factor * local_factor)
-)
-
-current_moment = (
-    baseline_moment /
-    global_factor
-)
-
-baseline_peak = float(np.max(np.abs(baseline_deflection)))
-current_peak = float(np.max(np.abs(current_deflection)))
-
-baseline_peak_mm = baseline_peak * 1000
-current_peak_mm = current_peak * 1000
-
-if baseline_peak_mm > 0.000001:
-    response_increase = (
-        (current_peak_mm - baseline_peak_mm)
-        / baseline_peak_mm
-    ) * 100
-else:
-    response_increase = 0.0
-
-# ============================================================
-# SENSOR CHANNELS
-# ============================================================
-
-always_on_types = [
-    "Deflection",
-    "Strain",
-    "Vibration",
-    "Temperature",
-    "Traffic Load"
-]
-
-special_types = [
-    "Tilt",
-    "Humidity",
-    "Corrosion",
-    "Crack Width",
-    "Acoustic Activity",
-    "Joint Displacement"
-]
-
-def interpolate_at_stations(values):
-    return np.interp(stations, x, values)
-
-
-station_baseline = interpolate_at_stations(
-    baseline_deflection
-)
-
-station_current = interpolate_at_stations(
-    current_deflection
-)
-
-station_moment = interpolate_at_stations(
-    current_moment
-)
-
-sensor_records = []
-
-for i, station in enumerate(stations):
-
-    deflection_mm = abs(station_current[i]) * 1000
-
-    strain_proxy = (
-        abs(station_moment[i]) * 0.000001
-    )
-
-    vibration_proxy = (
-        abs(station_current[i]) * 0.2
-    )
-
-    temperature = (
-        24 + 1.5 * np.sin(station / 4)
-    )
-
-    traffic_index = (
-        vehicle_weight / 50000 * 100
-    )
-
-    values = [
-        deflection_mm,
-        strain_proxy,
-        vibration_proxy,
-        temperature,
-        traffic_index
+    axle_positions = [
+        position - i * axle_spacing for i in range(axle_count)
+    ]
+    axle_positions = [
+        p for p in axle_positions if 0 <= p <= L
     ]
 
-    for sensor_type, value in zip(
-        always_on_types, values
-    ):
-        sensor_records.append({
-            "Station": round(float(station), 2),
-            "Sensor": sensor_type,
-            "Reading": round(float(value), 4),
-            "Mode": "Always-on"
+    if not axle_positions:
+        return moment, deflection
+
+    axle_load = vehicle_weight / axle_count
+    total_reaction = sum(
+        axle_load * (L - p) / L for p in axle_positions
+    )
+
+    for j, xx in enumerate(x):
+        m = total_reaction * xx
+        for p in axle_positions:
+            if xx >= p:
+                m -= axle_load * (xx - p)
+        moment[j] = m
+
+    # Numerical integration of curvature
+    curvature = moment / (E * inertia)
+    slope = np.zeros_like(x)
+    deflection = np.zeros_like(x)
+    dx = x[1] - x[0]
+
+    for j in range(1, len(x)):
+        slope[j] = slope[j-1] + (
+            curvature[j] + curvature[j-1]
+        ) * dx / 2
+        deflection[j] = deflection[j-1] + (
+            slope[j] + slope[j-1]
+        ) * dx / 2
+
+    # Remove end drift to approximate simple supports
+    deflection -= np.linspace(0, deflection[-1], len(x))
+    return moment, deflection
+
+baseline_moment, baseline_deflection = beam_response(vehicle_position, I)
+
+inertia_factor = max(0.5, 1 - stiffness_change / 100)
+changed_moment, changed_deflection = beam_response(
+    vehicle_position, I * inertia_factor
+)
+
+# Localized simulated change
+local_effect = (
+    local_change / 100
+) * np.exp(-((x - change_location) / 3.0) ** 2)
+
+changed_deflection = changed_deflection * (1 + local_effect)
+
+peak_deflection = float(np.max(np.abs(changed_deflection)) * 1000)
+peak_moment = float(np.max(np.abs(changed_moment)))
+baseline_peak = float(np.max(np.abs(baseline_deflection)) * 1000)
+
+response_change = (
+    (peak_deflection - baseline_peak) / max(baseline_peak, 0.001)
+) * 100
+
+# -------------------- SENSOR DATA --------------------
+
+sensor_rows = []
+
+for i, position in enumerate(stations):
+    idx = np.argmin(np.abs(x - position))
+
+    d = abs(changed_deflection[idx]) * 1000
+    m = abs(changed_moment[idx])
+    strain = m / (E * I) * 1000000
+    vibration = min(100, 10 + d * 15 + vehicle_weight / 2500)
+    temperature = 24 + 2 * np.sin(position / 5)
+    traffic = min(100, vehicle_weight / 500)
+
+    readings = [
+        ("Deflection", d, "mm"),
+        ("Strain proxy", strain, "με"),
+        ("Vibration index", vibration, "%"),
+        ("Temperature", temperature, "°C"),
+        ("Traffic/load index", traffic, "%")
+    ]
+
+    for channel, value, unit in readings:
+        sensor_rows.append({
+            "Station": i + 1,
+            "Position (m)": position,
+            "Channel": channel,
+            "Reading": value,
+            "Unit": unit
         })
 
-always_on_df = pd.DataFrame(sensor_records)
+primary_df = pd.DataFrame(sensor_rows)
 
-# ============================================================
-# EVENT-TRIGGERED SPECIAL ATTENTION
-# ============================================================
-
-threshold_trigger = (
-    current_peak_mm >= attention_threshold
+persistent_change = (
+    stiffness_change >= 5 or local_change >= 5
 )
 
-persistent_trigger = (
-    response_increase >= 5.0
-    and (
-        stiffness_reduction > 0
-        or local_change > 0
-    )
+special_mode = (
+    peak_deflection >= trigger_threshold
+    or persistent_change
 )
 
-special_mode = bool(
-    threshold_trigger or persistent_trigger
-)
+special_rows = []
 
-special_records = []
+special_channels = [
+    "Tilt proxy",
+    "Humidity",
+    "Corrosion indicator",
+    "Crack-width proxy",
+    "Acoustic activity",
+    "Joint displacement"
+]
 
-if special_mode:
-
-    for station in stations:
-
-        proximity = np.exp(
-            -((station - change_location) / 4) ** 2
+for i, position in enumerate(stations):
+    for j, channel in enumerate(special_channels):
+        # Illustrative simulated readings
+        value = (
+            (local_change * 0.08)
+            + (stiffness_change * 0.05)
+            + (i + 1) * 0.12
+            + j * 0.3
         )
+        special_rows.append({
+            "Station": i + 1,
+            "Position (m)": position,
+            "Channel": channel,
+            "Reading": value
+        })
 
-        special_values = [
-            0.2 + 2.0 * proximity,
-            55 + 10 * proximity,
-            0.1 + (local_change / 10) * proximity,
-            0.02 + (local_change / 100) * proximity,
-            0.3 + (local_change / 15) * proximity,
-            0.1 + (local_change / 20) * proximity
-        ]
+special_df = pd.DataFrame(special_rows)
 
-        for sensor_type, value in zip(
-            special_types, special_values
-        ):
-            special_records.append({
-                "Station": round(float(station), 2),
-                "Sensor": sensor_type,
-                "Reading": round(float(value), 4),
-                "Mode": "Special attention"
-            })
+# -------------------- TOP METRICS --------------------
 
-special_df = pd.DataFrame(special_records)
+m1, m2, m3, m4, m5 = st.columns(5)
 
-# ============================================================
-# SENSOR COUNTS
-# ============================================================
+def metric_card(column, label, value, note):
+    column.markdown(f"""
+    <div class="metric-card">
+      <div class="metric-label">{label}</div>
+      <div class="metric-value">{value}</div>
+      <div class="metric-note">{note}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-always_count = len(always_on_df)
-special_count = len(special_df)
-total_sensor_count = always_count + special_count
+metric_card(m1, "Peak deflection", f"{peak_deflection:.3f} mm",
+            "Maximum simulated bending")
+metric_card(m2, "Peak bending moment", f"{peak_moment:,.0f} Nm",
+            "Simplified beam model")
+metric_card(m3, "Always-on sensors", "55",
+            "5 channels × 11 stations")
+metric_card(m4, "Special sensors", "66",
+            "6 channels × 11 stations")
+metric_card(m5, "Response change", f"{response_change:+.1f}%",
+            "Compared with baseline")
 
-# ============================================================
-# 3D BRIDGE GENERATOR
-# ============================================================
+st.write("")
 
-def create_bridge():
+# -------------------- MAIN BRIDGE VIEW --------------------
+
+left, center, right = st.columns([1.05, 3.8, 1.15], gap="medium")
+
+with left:
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.markdown("### CONTROL CENTER")
+    st.markdown('<div class="small-label">Vehicle simulation</div>',
+                unsafe_allow_html=True)
+    st.metric("Vehicle load", f"{vehicle_weight:,} N")
+    st.metric("Vehicle location", f"{vehicle_position:.1f} m")
+    st.metric("Axles", axle_count)
+
+    st.divider()
+    st.markdown('<div class="small-label">Monitoring network</div>',
+                unsafe_allow_html=True)
+    st.markdown("🟢 **55** Always-on sensors")
+    st.markdown("🔴 **66** Adaptive sensors")
+    st.markdown("📡 **11** Sensor stations")
+    st.markdown("📊 **5** Primary channels")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with center:
+    st.markdown("### 3D BRIDGE DIGITAL TWIN")
 
     fig = go.Figure()
 
-    # --------------------------------------------------------
-    # BRIDGE DECK
-    # --------------------------------------------------------
-
-    deck_x = [0, L, L, 0]
-    deck_y = [-3, -3, 3, 3]
-    deck_z = [0, 0, 0, 0]
-
-    fig.add_trace(go.Mesh3d(
-        x=deck_x,
-        y=deck_y,
-        z=deck_z,
-        i=[0, 0],
-        j=[1, 2],
-        k=[2, 3],
-        color="#163d59",
-        opacity=0.95,
-        flatshading=False,
-        name="Bridge deck",
+    # Water surface
+    fig.add_trace(go.Surface(
+        x=[0, 30],
+        y=[-12, 12],
+        z=[[0, 0], [0, 0]],
+        colorscale=[
+            [0, "#0A3970"],
+            [0.5, "#12619A"],
+            [1, "#1A80B5"]
+        ],
+        opacity=0.48,
+        showscale=False,
         hoverinfo="skip",
-        lighting=dict(
-            ambient=0.45,
-            diffuse=0.9,
-            specular=0.8,
-            roughness=0.35,
-            fresnel=0.3
-        )
+        name="Water"
     ))
 
-    # --------------------------------------------------------
-    # ROAD SURFACE
-    # --------------------------------------------------------
+    # Bridge deck
+    deck_z = 5.0
+    for ydeck in [-1.5, 1.5]:
+        fig.add_trace(go.Scatter3d(
+            x=x, y=np.full_like(x, ydeck),
+            z=np.full_like(x, deck_z),
+            mode="lines",
+            line=dict(color="#D8E7F6", width=7),
+            hoverinfo="skip",
+            showlegend=False
+        ))
 
-    road_x = [0, L, L, 0]
-    road_y = [-2.3, -2.3, 2.3, 2.3]
-    road_z = [0.08] * 4
-
+    # Deck surface
     fig.add_trace(go.Mesh3d(
-        x=road_x,
-        y=road_y,
-        z=road_z,
-        i=[0, 0],
-        j=[1, 2],
-        k=[2, 3],
-        color="#101c2c",
-        opacity=1,
-        name="Road surface",
+        x=[0, 30, 30, 0],
+        y=[-1.5, -1.5, 1.5, 1.5],
+        z=[deck_z, deck_z, deck_z, deck_z],
+        i=[0, 0], j=[1, 2], k=[2, 3],
+        color="#8791A4",
+        opacity=0.9,
+        name="Bridge deck",
         hoverinfo="skip"
     ))
 
-    # --------------------------------------------------------
-    # LANE MARKINGS
-    # --------------------------------------------------------
-
-    for lane_y in [-0.8, 0.8]:
-
-        for start in np.arange(0.5, L, 3):
-
-            end = min(start + 1.5, L)
-
-            fig.add_trace(go.Scatter3d(
-                x=[start, end],
-                y=[lane_y, lane_y],
-                z=[0.12, 0.12],
-                mode="lines",
-                line=dict(
-                    color="#55a9c8",
-                    width=3
-                ),
-                showlegend=False,
-                hoverinfo="skip"
-            ))
-
-    # --------------------------------------------------------
-    # DECK EDGE LIGHTS
-    # --------------------------------------------------------
-
-    for side in [-2.8, 2.8]:
-
-        fig.add_trace(go.Scatter3d(
-            x=[0, L],
-            y=[side, side],
-            z=[0.16, 0.16],
-            mode="lines",
-            line=dict(
-                color="#23c8ee",
-                width=6
-            ),
-            showlegend=False,
-            hoverinfo="skip"
-        ))
-
-    # --------------------------------------------------------
-    # SUPPORT BEAMS
-    # --------------------------------------------------------
-
-    for position in np.arange(0, L + 0.1, 2):
-
-        fig.add_trace(go.Scatter3d(
-            x=[position, position],
-            y=[-3, 3],
-            z=[-0.18, -0.18],
-            mode="lines",
-            line=dict(
-                color="#416782",
-                width=3
-            ),
-            showlegend=False,
-            hoverinfo="skip"
-        ))
-
-    # --------------------------------------------------------
-    # MAIN TOWERS
-    # --------------------------------------------------------
-
+    # Main towers
     tower_positions = [10, 20]
-
-    for tower_x in tower_positions:
-
-        # Two tower legs
-        for side in [-0.85, 0.85]:
-
+    for tx in tower_positions:
+        for ty in [-0.7, 0.7]:
             fig.add_trace(go.Scatter3d(
-                x=[tower_x, tower_x],
-                y=[side, side],
-                z=[0, 10],
+                x=[tx, tx],
+                y=[ty, ty],
+                z=[deck_z, 17],
                 mode="lines",
-                line=dict(
-                    color="#78c9ed",
-                    width=13
-                ),
-                showlegend=False,
-                hoverinfo="skip"
+                line=dict(color="#E9F7FE", width=10),
+                hoverinfo="skip",
+                showlegend=False
             ))
 
-        # Tower crossbar
+        # Tower cross beam
         fig.add_trace(go.Scatter3d(
-            x=[tower_x, tower_x],
-            y=[-0.85, 0.85],
-            z=[10, 10],
+            x=[tx, tx],
+            y=[-0.8, 0.8],
+            z=[14, 14],
             mode="lines",
-            line=dict(
-                color="#8ceaff",
-                width=9
-            ),
-            showlegend=False,
-            hoverinfo="skip"
+            line=dict(color="#9CBEF5", width=7),
+            hoverinfo="skip",
+            showlegend=False
         ))
 
-        # Tower illuminated center
-        fig.add_trace(go.Scatter3d(
-            x=[tower_x, tower_x],
-            y=[0, 0],
-            z=[0, 10],
-            mode="lines",
-            line=dict(
-                color="#20bfe8",
-                width=3
-            ),
-            showlegend=False,
-            hoverinfo="skip"
-        ))
-
-    # --------------------------------------------------------
-    # CABLES
-    # --------------------------------------------------------
-
-    for tower_x in tower_positions:
-
+        # Cable stays on both sides of tower
         for side in [-1, 1]:
-
             for anchor_x in np.linspace(
-                max(0, tower_x - 9),
-                min(L, tower_x + 9),
-                13
+                max(0, tx - 9), min(30, tx + 9), 10
             ):
-
-                if abs(anchor_x - tower_x) < 0.01:
+                if abs(anchor_x - tx) < 0.4:
                     continue
-
-                cable_height = (
-                    9.8 -
-                    abs(anchor_x - tower_x) * 0.65
-                )
-
+                anchor_y = side * 1.45
                 fig.add_trace(go.Scatter3d(
-                    x=[tower_x, anchor_x],
-                    y=[side * 0.85, side * 2.8],
-                    z=[10, 0.12],
+                    x=[tx, anchor_x],
+                    y=[side * 0.7, anchor_y],
+                    z=[17, deck_z],
                     mode="lines",
-                    line=dict(
-                        color="#63b8df",
-                        width=2
-                    ),
-                    showlegend=False,
-                    hoverinfo="skip"
+                    line=dict(color="#B8D7F4", width=2),
+                    hoverinfo="skip",
+                    showlegend=False
                 ))
 
-    # --------------------------------------------------------
-    # PYLON BASES
-    # --------------------------------------------------------
-
-    for tower_x in tower_positions:
-
+    # Under-deck piers
+    for px_pos in [5, 15, 25]:
         fig.add_trace(go.Scatter3d(
-            x=[tower_x, tower_x],
-            y=[-1.2, 1.2],
-            z=[0.18, 0.18],
+            x=[px_pos, px_pos],
+            y=[0, 0],
+            z=[0.2, deck_z],
             mode="lines",
-            line=dict(
-                color="#b0eaff",
-                width=15
-            ),
-            showlegend=False,
-            hoverinfo="skip"
+            line=dict(color="#A7B8D0", width=9),
+            hoverinfo="skip",
+            showlegend=False
         ))
 
-    # --------------------------------------------------------
-    # ALWAYS-ON SENSOR DOTS
-    # --------------------------------------------------------
-
-    sensor_x = []
-    sensor_y = []
-    sensor_z = []
+    # Green primary sensors: 55 total
+    sensor_x, sensor_y, sensor_z = [], [], []
     sensor_hover = []
 
-    for row, sensor_type in enumerate(always_on_types):
-
-        for index, station in enumerate(stations):
-
-            sensor_x.append(station)
-
+    for station_index, position in enumerate(stations):
+        for channel_index in range(5):
+            sensor_x.append(position)
             sensor_y.append(
-                -2.0 + row * 0.95
+                [-1.2, -0.6, 0, 0.6, 1.2][channel_index]
             )
-
-            sensor_z.append(
-                0.27 + row * 0.035
-            )
-
-            reading = always_on_df[
-                (always_on_df["Station"] == round(float(station), 2))
-                & (always_on_df["Sensor"] == sensor_type)
-            ]["Reading"].iloc[0]
-
+            sensor_z.append(deck_z + 0.12 + channel_index * 0.025)
             sensor_hover.append(
-                f"<b>{sensor_type}</b><br>"
-                f"Station: {station:.1f} m<br>"
-                f"Reading: {reading:.4f}"
+                f"Station {station_index + 1}<br>"
+                f"{primary_df.iloc[station_index * 5 + channel_index]['Channel']}<br>"
+                f"Position: {position:.1f} m"
             )
 
     fig.add_trace(go.Scatter3d(
-        x=sensor_x,
-        y=sensor_y,
-        z=sensor_z,
+        x=sensor_x, y=sensor_y, z=sensor_z,
         mode="markers",
         marker=dict(
             size=5,
-            color="#39f5a2",
-            opacity=0.95,
-            line=dict(
-                color="#b4ffe0",
-                width=1
-            )
+            color="#39F58A",
+            line=dict(color="#D8FFE8", width=1),
+            opacity=1
         ),
         text=sensor_hover,
-        hovertemplate="%{text}<extra></extra>",
+        hovertemplate="%{text}<extra>Always-on sensor</extra>",
         name="55 Always-on sensors"
     ))
 
-    # --------------------------------------------------------
-    # SPECIAL ATTENTION SENSOR DOTS
-    # --------------------------------------------------------
-
+    # Red special-attention sensors: 66 total
     if special_mode:
+        red_x, red_y, red_z, red_hover = [], [], [], []
 
-        special_x = []
-        special_y = []
-        special_z = []
-        special_hover = []
-
-        for row, sensor_type in enumerate(special_types):
-
-            for station in stations:
-
-                special_x.append(station)
-
-                special_y.append(
-                    -2.0 + row * 0.75
+        for station_index, position in enumerate(stations):
+            for channel_index in range(6):
+                red_x.append(position)
+                red_y.append(
+                    [-1.35, -0.8, -0.25, 0.25, 0.8, 1.35][channel_index]
                 )
-
-                special_z.append(
-                    0.65 + row * 0.04
-                )
-
-                reading = special_df[
-                    (special_df["Station"] == round(float(station), 2))
-                    & (special_df["Sensor"] == sensor_type)
-                ]["Reading"].iloc[0]
-
-                special_hover.append(
-                    f"<b>{sensor_type}</b><br>"
-                    f"Station: {station:.1f} m<br>"
-                    f"Reading: {reading:.4f}"
+                red_z.append(deck_z + 0.35 + channel_index * 0.035)
+                red_hover.append(
+                    f"Station {station_index + 1}<br>"
+                    f"{special_channels[channel_index]}<br>"
+                    f"Position: {position:.1f} m"
                 )
 
         fig.add_trace(go.Scatter3d(
-            x=special_x,
-            y=special_y,
-            z=special_z,
+            x=red_x, y=red_y, z=red_z,
             mode="markers",
             marker=dict(
                 size=5,
-                color="#ff4e70",
-                symbol="diamond",
-                opacity=1,
-                line=dict(
-                    color="#ffd1dc",
-                    width=1
-                )
+                color="#FF4B5C",
+                line=dict(color="#FFE0E3", width=1),
+                opacity=1
             ),
-            text=special_hover,
-            hovertemplate="%{text}<extra></extra>",
+            text=red_hover,
+            hovertemplate="%{text}<extra>Special-attention sensor</extra>",
             name="66 Special-attention sensors"
         ))
 
-    # --------------------------------------------------------
-    # MOVING VEHICLE
-    # --------------------------------------------------------
-
-    car_x = vehicle_position
-    car_y = 0.0
-    car_z = 0.48
-
-    # Main vehicle body
-    fig.add_trace(go.Mesh3d(
-        x=[
-            car_x - 0.8, car_x + 0.8,
-            car_x + 0.8, car_x - 0.8,
-            car_x - 0.8, car_x + 0.8,
-            car_x + 0.8, car_x - 0.8
-        ],
-        y=[
-            -0.55, -0.55, 0.55, 0.55,
-            -0.55, -0.55, 0.55, 0.55
-        ],
-        z=[
-            car_z, car_z, car_z, car_z,
-            car_z + 0.55, car_z + 0.55,
-            car_z + 0.55, car_z + 0.55
-        ],
-        i=[0, 0, 4, 4, 0, 0, 1, 1, 2, 2, 3, 3],
-        j=[1, 2, 5, 6, 1, 5, 2, 6, 3, 7, 0, 4],
-        k=[2, 3, 6, 7, 5, 4, 6, 5, 7, 6, 4, 7],
-        color="#f4a340",
-        opacity=1,
-        flatshading=True,
-        name="Simulated vehicle",
+    # Moving vehicle marker
+    fig.add_trace(go.Scatter3d(
+        x=[vehicle_position],
+        y=[0],
+        z=[deck_z + 0.7],
+        mode="markers+text",
+        marker=dict(
+            size=11,
+            color="#FFD166",
+            symbol="diamond",
+            line=dict(color="white", width=2)
+        ),
+        text=["VEHICLE"],
+        textposition="top center",
+        name="Moving vehicle",
         hovertemplate="Vehicle position: %{x:.1f} m<extra></extra>"
     ))
 
-    # Vehicle wheels
-    for wheel_x in [car_x - 0.5, car_x + 0.5]:
-
-        for wheel_y in [-0.48, 0.48]:
-
-            fig.add_trace(go.Scatter3d(
-                x=[wheel_x],
-                y=[wheel_y],
-                z=[0.42],
-                mode="markers",
-                marker=dict(
-                    size=8,
-                    color="#09121e"
-                ),
-                showlegend=False,
-                hoverinfo="skip"
-            ))
-
-    # Vehicle position indicator
-    fig.add_trace(go.Scatter3d(
-        x=[car_x],
-        y=[0],
-        z=[1.2],
-        mode="markers",
-        marker=dict(
-            size=5,
-            color="#ffca65"
-        ),
-        name="Vehicle location",
-        hovertemplate=f"Vehicle: {car_x:.1f} m<extra></extra>"
-    ))
-
-    # --------------------------------------------------------
-    # LAYOUT
-    # --------------------------------------------------------
-
+    # Bridge layout
     fig.update_layout(
-        height=650,
-        margin=dict(l=0, r=0, t=15, b=0),
+        height=610,
+        margin=dict(l=0, r=0, t=5, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        scene=dict(
-            bgcolor="rgba(5,15,29,0)",
-            xaxis=dict(
-                title="Bridge length (m)",
-                range=[-2, 32],
-                backgroundcolor="#0a1728",
-                gridcolor="#203b53",
-                zerolinecolor="#203b53",
-                color="#9cb9d3"
-            ),
-            yaxis=dict(
-                title="Width",
-                range=[-5, 5],
-                backgroundcolor="#0a1728",
-                gridcolor="#203b53",
-                zerolinecolor="#203b53",
-                color="#9cb9d3"
-            ),
-            zaxis=dict(
-                title="Height",
-                range=[-1, 13],
-                backgroundcolor="#0a1728",
-                gridcolor="#203b53",
-                zerolinecolor="#203b53",
-                color="#9cb9d3"
-            ),
-            aspectmode="manual",
-            aspectratio=dict(
-                x=2.7,
-                y=0.8,
-                z=0.9
-            ),
-            camera=dict(
-                eye=dict(
-                    x=1.7,
-                    y=-2.0,
-                    z=1.25
-                )
-            )
-        ),
+        font=dict(color="#E9F7FE"),
         legend=dict(
             orientation="h",
             y=1.02,
-            x=0.02,
-            font=dict(color="#d7eaff"),
-            bgcolor="rgba(7,17,31,0.65)"
+            x=0,
+            bgcolor="rgba(2,5,11,0.5)",
+            font=dict(size=10)
         ),
-        hoverlabel=dict(
-            bgcolor="#102940",
-            font_color="white",
-            bordercolor="#2dc8e8"
+        scene=dict(
+            bgcolor="rgba(2,5,11,0)",
+            xaxis=dict(
+                title="Bridge length (m)",
+                range=[-1, 31],
+                color="#9CBEF5",
+                gridcolor="#263D73",
+                zerolinecolor="#263D73"
+            ),
+            yaxis=dict(
+                title="Width",
+                range=[-12, 12],
+                color="#9CBEF5",
+                gridcolor="#263D73"
+            ),
+            zaxis=dict(
+                title="Height",
+                range=[0, 19],
+                color="#9CBEF5",
+                gridcolor="#263D73"
+            ),
+            aspectratio=dict(x=2.4, y=1.0, z=0.9),
+            camera=dict(
+                eye=dict(x=1.7, y=-2.1, z=1.25)
+            )
         )
     )
-
-    return fig
-
-
-# ============================================================
-# CHART HELPER
-# ============================================================
-
-def style_chart(fig, height=350):
-
-    fig.update_layout(
-        height=height,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(
-            color="#c7d9ec",
-            family="Inter"
-        ),
-        margin=dict(l=20, r=20, t=55, b=35),
-        legend=dict(
-            bgcolor="rgba(0,0,0,0)"
-        ),
-        xaxis=dict(
-            gridcolor="#243c53",
-            zerolinecolor="#243c53"
-        ),
-        yaxis=dict(
-            gridcolor="#243c53",
-            zerolinecolor="#243c53"
-        )
-    )
-
-    return fig
-
-
-# ============================================================
-# DASHBOARD SUMMARY
-# ============================================================
-
-st.markdown("### SYSTEM OVERVIEW")
-
-m1, m2, m3, m4 = st.columns(4)
-
-m1.metric(
-    "Bridge length",
-    "30 m"
-)
-
-m2.metric(
-    "Always-on sensors",
-    always_count
-)
-
-m3.metric(
-    "Special sensors",
-    special_count,
-    delta="ACTIVE" if special_mode else "STANDBY"
-)
-
-m4.metric(
-    "Peak deflection",
-    f"{current_peak_mm:.3f} mm"
-)
-
-# ============================================================
-# TABS
-# ============================================================
-
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🌉 Bridge Overview",
-    "📡 Sensor Network",
-    "🔍 Change Detection",
-    "📍 Localization",
-    "📈 History & Trends"
-])
-
-# ============================================================
-# TAB 1 — BRIDGE OVERVIEW
-# ============================================================
-
-with tab1:
-
-    st.markdown("### 3D STRUCTURAL DIGITAL TWIN")
-
-    st.caption(
-        "Interactive bridge simulation • Drag to rotate • Scroll to zoom • "
-        "Hover over sensors for readings"
-    )
-
-    if special_mode:
-        st.warning(
-            "SPECIAL ATTENTION ACTIVE — Additional sensor channels are enabled."
-        )
-    else:
-        st.success(
-            "NORMAL MONITORING — Always-on sensor network is operating."
-        )
-
-    bridge_fig = create_bridge()
 
     st.plotly_chart(
-        bridge_fig,
+        fig,
         use_container_width=True,
         config={
             "displayModeBar": True,
             "scrollZoom": True,
             "displaylogo": False
-        },
-        key="bridge_3d"
+        }
     )
 
-    st.markdown("#### SENSOR LEGEND")
-
-    leg1, leg2, leg3 = st.columns(3)
-
-    leg1.markdown(
-        "<span style='color:#39f5a2;font-size:20px'>●</span> "
-        "Always-on sensors",
-        unsafe_allow_html=True
+    st.caption(
+        "Drag to rotate · Scroll to zoom · Hover over sensor markers "
+        "to inspect their station and channel."
     )
 
-    leg2.markdown(
-        "<span style='color:#ff4e70;font-size:20px'>◆</span> "
-        "Special-attention sensors",
-        unsafe_allow_html=True
-    )
+with right:
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.markdown("### SYSTEM STATUS")
 
-    leg3.markdown(
-        "<span style='color:#f4a340;font-size:20px'>■</span> "
-        "Moving vehicle",
-        unsafe_allow_html=True
-    )
+    if special_mode:
+        st.markdown(
+            '<div class="status-alert">● SPECIAL ATTENTION ACTIVE</div>',
+            unsafe_allow_html=True
+        )
+        st.write("Additional sensor channels are activated.")
+    else:
+        st.markdown(
+            '<div class="status-good">● NORMAL MONITORING</div>',
+            unsafe_allow_html=True
+        )
+        st.write("Primary sensors are continuously monitoring.")
 
     st.divider()
+    st.markdown("**Detection summary**")
 
-    st.markdown("#### LIVE STRUCTURAL RESPONSE")
+    if persistent_change:
+        st.warning("Persistent-change signal simulated")
+    elif special_mode:
+        st.info("Response threshold reached")
+    else:
+        st.success("No simulated persistent change")
 
+    st.metric("Deflection trigger", f"{trigger_threshold:.2f} mm")
+    st.metric("Measured peak", f"{peak_deflection:.3f} mm")
+    st.metric("Stiffness reduction", f"{stiffness_change}%")
+    st.metric("Local change signal", f"{local_change}%")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# -------------------- LOWER INFORMATION PANELS --------------------
+
+st.write("")
+st.markdown("## STRUCTURAL RESPONSE ANALYSIS")
+
+chart_left, chart_right = st.columns(2, gap="medium")
+
+with chart_left:
     response_fig = go.Figure()
-
     response_fig.add_trace(go.Scatter(
         x=x,
         y=baseline_deflection * 1000,
         mode="lines",
         name="Baseline",
-        line=dict(
-            color="#43c9ef",
-            width=2,
-            dash="dash"
-        )
+        line=dict(color="#53A7FF", width=2)
     ))
-
     response_fig.add_trace(go.Scatter(
         x=x,
-        y=current_deflection * 1000,
+        y=changed_deflection * 1000,
         mode="lines",
-        name="Current response",
-        line=dict(
-            color="#36edaa",
-            width=3
-        ),
-        fill="tozeroy",
-        fillcolor="rgba(54,237,170,0.08)"
+        name="Current simulated response",
+        line=dict(color="#FFB84D", width=3)
     ))
-
     response_fig.update_layout(
         title="Bridge deflection profile",
         xaxis_title="Bridge position (m)",
-        yaxis_title="Deflection (mm)"
+        yaxis_title="Deflection (mm)",
+        height=330,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(7,21,46,0.8)",
+        font=dict(color="#E9F7FE"),
+        legend=dict(orientation="h", y=1.12),
+        margin=dict(l=15, r=15, t=55, b=25)
+    )
+    st.plotly_chart(response_fig, use_container_width=True)
+
+with chart_right:
+    moment_fig = go.Figure()
+    moment_fig.add_trace(go.Scatter(
+        x=x,
+        y=baseline_moment,
+        mode="lines",
+        name="Bending moment",
+        line=dict(color="#53A7FF", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(83,167,255,0.12)"
+    ))
+    moment_fig.update_layout(
+        title="Bending moment distribution",
+        xaxis_title="Bridge position (m)",
+        yaxis_title="Moment (Nm)",
+        height=330,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(7,21,46,0.8)",
+        font=dict(color="#E9F7FE"),
+        margin=dict(l=15, r=15, t=55, b=25)
+    )
+    st.plotly_chart(moment_fig, use_container_width=True)
+
+# -------------------- CHANGE DETECTION --------------------
+
+st.markdown("## STRUCTURAL CHANGE DETECTION")
+
+d1, d2, d3 = st.columns(3)
+
+with d1:
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.markdown("**Baseline response**")
+    st.metric("Peak deflection", f"{baseline_peak:.3f} mm")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with d2:
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.markdown("**Current response**")
+    st.metric("Peak deflection", f"{peak_deflection:.3f} mm")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with d3:
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.markdown("**Difference from baseline**")
+    st.metric("Response difference", f"{response_change:+.1f}%")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+if persistent_change:
+    st.error(
+        "SIMULATED RESULT: Persistent structural-change signal detected. "
+        "The model's changed parameters differ from its baseline."
+    )
+elif special_mode:
+    st.warning(
+        "SIMULATED RESULT: Temporary response threshold reached. "
+        "Additional attention channels are active."
+    )
+else:
+    st.success(
+        "SIMULATED RESULT: No persistent structural-change signal "
+        "has been introduced in this scenario."
     )
 
-    st.plotly_chart(
-        style_chart(response_fig),
-        use_container_width=True
-    )
+# -------------------- SENSOR TABLES --------------------
 
-# ============================================================
-# TAB 2 — SENSOR NETWORK
-# ============================================================
+st.markdown("## SENSOR NETWORK")
 
-with tab2:
+sensor_col1, sensor_col2 = st.columns(2, gap="medium")
 
-    st.markdown("### DISTRIBUTED SENSOR NETWORK")
-
-    c1, c2, c3 = st.columns(3)
-
-    c1.metric(
-        "Always-on channels",
-        "5"
-    )
-
-    c2.metric(
-        "Stations",
-        "11"
-    )
-
-    c3.metric(
-        "Always-on readings",
-        always_count
-    )
-
-    st.markdown("#### ALWAYS-ON SENSOR READINGS")
-
+with sensor_col1:
+    st.markdown("### 🟢 ALWAYS-ON SENSOR READINGS")
     st.dataframe(
-        always_on_df,
+        primary_df,
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
+        height=330
     )
 
-    st.divider()
-
-    st.markdown("#### SPECIAL-ATTENTION SENSOR READINGS")
-
+with sensor_col2:
+    st.markdown("### 🔴 SPECIAL-ATTENTION SENSOR READINGS")
     if special_mode:
-
-        st.success(
-            f"Additional monitoring active: {special_count} readings."
-        )
-
         st.dataframe(
             special_df,
             use_container_width=True,
-            hide_index=True
+            hide_index=True,
+            height=330
         )
-
     else:
-
         st.info(
-            "Special-attention sensors are currently on standby. "
-            "They activate when the trigger conditions are met."
+            "Special-attention channels are simulated as available but "
+            "are not active in normal monitoring mode."
         )
 
-        st.dataframe(
-            pd.DataFrame({
-                "Sensor type": special_types,
-                "Status": ["Standby"] * len(special_types)
-            }),
-            use_container_width=True,
-            hide_index=True
-        )
+# -------------------- LOCALIZATION --------------------
 
-    st.divider()
+st.markdown("## CHANGE LOCALIZATION")
 
-    st.markdown("#### SENSOR CHANNEL COVERAGE")
+if persistent_change:
+    estimated_location = change_location
+    st.warning(
+        f"Simulated change location: approximately "
+        f"{estimated_location:.1f} m along the bridge."
+    )
+elif special_mode:
+    estimated_location = vehicle_position
+    st.info(
+        f"Temporary response is associated with the vehicle near "
+        f"{estimated_location:.1f} m."
+    )
+else:
+    st.success("No simulated change location to report.")
 
-    coverage = pd.DataFrame({
-        "Sensor category": always_on_types + special_types,
-        "Stations": [11] * 11,
-        "Status": (
-            ["Active"] * 5 +
-            (["Active"] * 6 if special_mode else ["Standby"] * 6)
-        )
-    })
+localization_fig = go.Figure()
+localization_fig.add_trace(go.Scatter(
+    x=stations,
+    y=np.zeros(len(stations)),
+    mode="lines+markers",
+    line=dict(color="#53A7FF", width=8),
+    marker=dict(size=13, color="#39F58A"),
+    name="Sensor stations"
+))
 
-    coverage_fig = go.Figure()
-
-    coverage_fig.add_trace(go.Bar(
-        x=coverage["Sensor category"],
-        y=coverage["Stations"],
-        marker_color=[
-            "#39dba3" if status == "Active" else "#52677d"
-            for status in coverage["Status"]
-        ],
-        text=coverage["Status"],
-        textposition="outside"
+if special_mode:
+    localization_fig.add_trace(go.Scatter(
+        x=[estimated_location],
+        y=[0],
+        mode="markers+text",
+        marker=dict(size=19, color="#FF4B5C", symbol="diamond"),
+        text=["DETECTION"],
+        textposition="top center",
+        name="Simulated detection"
     ))
 
-    coverage_fig.update_layout(
-        title="Sensor coverage by channel",
-        xaxis_title="Sensor type",
-        yaxis_title="Number of stations"
-    )
+localization_fig.update_layout(
+    height=190,
+    xaxis_title="Bridge position (m)",
+    yaxis=dict(visible=False, range=[-0.5, 0.7]),
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(7,21,46,0.8)",
+    font=dict(color="#E9F7FE"),
+    margin=dict(l=15, r=15, t=15, b=35)
+)
+st.plotly_chart(localization_fig, use_container_width=True)
 
-    st.plotly_chart(
-        style_chart(coverage_fig),
-        use_container_width=True
-    )
+# -------------------- HISTORY AND EXPORT --------------------
 
-# ============================================================
-# TAB 3 — CHANGE DETECTION
-# ============================================================
+st.markdown("## HISTORY & LONG-TERM TRENDS")
 
-with tab3:
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-    st.markdown("### STRUCTURAL CHANGE DETECTION")
+h1, h2 = st.columns([1, 4])
 
-    a, b, c = st.columns(3)
+with h1:
+    if st.button("＋ SAVE CURRENT SNAPSHOT", use_container_width=True):
+        st.session_state.history.append({
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Vehicle position (m)": vehicle_position,
+            "Vehicle weight (N)": vehicle_weight,
+            "Peak deflection (mm)": peak_deflection,
+            "Peak moment (Nm)": peak_moment,
+            "Response change (%)": response_change,
+            "Special mode": special_mode,
+            "Stiffness reduction (%)": stiffness_change,
+            "Local change (%)": local_change
+        })
+        st.success("Snapshot saved.")
 
-    a.metric(
-        "Baseline deflection",
-        f"{baseline_peak_mm:.3f} mm"
-    )
-
-    b.metric(
-        "Current deflection",
-        f"{current_peak_mm:.3f} mm"
-    )
-
-    c.metric(
-        "Response change",
-        f"{response_increase:.1f}%"
-    )
-
-    st.divider()
-
-    st.markdown("#### BASELINE VS CURRENT RESPONSE")
-
-    compare_fig = go.Figure()
-
-    compare_fig.add_trace(go.Scatter(
-        x=x,
-        y=baseline_deflection * 1000,
-        name="Baseline",
-        mode="lines",
-        line=dict(
-            color="#42bfe9",
-            width=3
-        )
-    ))
-
-    compare_fig.add_trace(go.Scatter(
-        x=x,
-        y=current_deflection * 1000,
-        name="Current",
-        mode="lines",
-        line=dict(
-            color="#ffb454",
-            width=3
-        )
-    ))
-
-    compare_fig.update_layout(
-        title="Structural response comparison",
-        xaxis_title="Bridge position (m)",
-        yaxis_title="Deflection (mm)"
-    )
-
-    st.plotly_chart(
-        style_chart(compare_fig),
-        use_container_width=True
-    )
-
-    st.markdown("#### DETECTION RESULT")
-
-    if persistent_trigger:
-
-        st.error(
-            "PERSISTENT STRUCTURAL CHANGE INDICATED"
-        )
-
-        st.write(
-            "The current response differs from the baseline "
-            "by at least the simulation's 5% comparison threshold."
-        )
-
-    elif threshold_trigger:
-
-        st.warning(
-            "ATTENTION TRIGGERED — RESPONSE THRESHOLD EXCEEDED"
-        )
-
-        st.write(
-            "The current response exceeded the selected "
-            "deflection attention threshold."
-        )
-
-    else:
-
-        st.success(
-            "NO SIMULATED CHANGE TRIGGER DETECTED"
-        )
-
-        st.write(
-            "The current response has not activated either "
-            "special-attention trigger."
-        )
-
-    st.caption(
-        "This is an educational simulation. It does not diagnose "
-        "real structural damage or determine whether a bridge is safe."
-    )
-
-# ============================================================
-# TAB 4 — LOCALIZATION
-# ============================================================
-
-with tab4:
-
-    st.markdown("### STRUCTURAL CHANGE LOCALIZATION")
-
-    st.caption(
-        "Explore how the simulated response varies along the bridge."
-    )
-
-    location_fig = go.Figure()
-
-    location_fig.add_trace(go.Scatter(
-        x=x,
-        y=current_deflection * 1000,
-        mode="lines",
-        name="Current response",
-        line=dict(
-            color="#37dcb0",
-            width=3
-        )
-    ))
-
-    location_fig.add_vline(
-        x=change_location,
-        line_dash="dash",
-        line_color="#ff5979",
-        annotation_text="Simulated change location"
-    )
-
-    location_fig.update_layout(
-        title="Response along bridge length",
-        xaxis_title="Bridge position (m)",
-        yaxis_title="Deflection (mm)"
-    )
-
-    st.plotly_chart(
-        style_chart(location_fig),
-        use_container_width=True
-    )
-
-    # Sensor station response differences
-    differences = (
-        np.abs(station_current - station_baseline) * 1000
-    )
-
-    location_df = pd.DataFrame({
-        "Station (m)": stations,
-        "Baseline (mm)": np.abs(station_baseline) * 1000,
-        "Current (mm)": np.abs(station_current) * 1000,
-        "Difference (mm)": differences
-    })
-
-    location_df = location_df.round(4)
-
-    st.markdown("#### STATION COMPARISON")
-
-    st.dataframe(
-        location_df,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    if local_change > 0 or stiffness_reduction > 0:
-
-        st.info(
-            f"Simulated change input location: {change_location:.1f} m"
-        )
-
-    else:
-
-        st.info(
-            "No structural change has been added to the simulation."
-        )
-
-# ============================================================
-# TAB 5 — HISTORY AND TRENDS
-# ============================================================
-
-with tab5:
-
-    st.markdown("### HISTORICAL MONITORING")
-
-    if "history" not in st.session_state:
+with h2:
+    if st.button("CLEAR HISTORY", use_container_width=True):
         st.session_state.history = []
+        st.rerun()
 
-    col_a, col_b = st.columns([1, 1])
+if st.session_state.history:
+    history_df = pd.DataFrame(st.session_state.history)
+    st.dataframe(history_df, use_container_width=True, hide_index=True)
 
-    with col_a:
+    history_chart = px.line(
+        history_df,
+        x="Timestamp",
+        y="Peak deflection (mm)",
+        markers=True,
+        title="Saved peak-deflection snapshots"
+    )
+    history_chart.update_layout(
+        height=300,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(7,21,46,0.8)",
+        font=dict(color="#E9F7FE")
+    )
+    st.plotly_chart(history_chart, use_container_width=True)
 
-        if st.button(
-            "➕ Save current simulation snapshot",
-            use_container_width=True
-        ):
+    csv_bytes = history_df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "⬇ DOWNLOAD HISTORY CSV",
+        data=csv_bytes,
+        file_name="bridge_monitoring_history.csv",
+        mime="text/csv"
+    )
+else:
+    st.info("No snapshots saved yet. Save a snapshot to begin building history.")
 
-            snapshot = {
-                "Timestamp": datetime.now().strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-                "Vehicle weight (N)": vehicle_weight,
-                "Axles": axles,
-                "Vehicle position (m)": vehicle_position,
-                "Stiffness reduction (%)": stiffness_reduction,
-                "Local change (%)": local_change,
-                "Baseline deflection (mm)": baseline_peak_mm,
-                "Current deflection (mm)": current_peak_mm,
-                "Response increase (%)": response_increase,
-                "Always-on readings": always_count,
-                "Special readings": special_count,
-                "Special mode": special_mode
-            }
+# -------------------- FOOTER --------------------
 
-            st.session_state.history.append(snapshot)
-
-            st.success("Simulation snapshot saved.")
-
-    with col_b:
-
-        if st.button(
-            "🗑️ Clear session history",
-            use_container_width=True
-        ):
-
-            st.session_state.history = []
-
-            st.success("Session history cleared.")
-
-    st.divider()
-
-    if st.session_state.history:
-
-        history_df = pd.DataFrame(
-            st.session_state.history
-        )
-
-        st.markdown("#### SAVED SIMULATION RECORDS")
-
-        st.dataframe(
-            history_df,
-            use_container_width=True,
-            hide_index=True
-        )
-
-        history_fig = go.Figure()
-
-        history_fig.add_trace(go.Scatter(
-            x=list(range(1, len(history_df) + 1)),
-            y=history_df["Current deflection (mm)"],
-            mode="lines+markers",
-            name="Current deflection",
-            line=dict(
-                color="#39d9ac",
-                width=3
-            ),
-            marker=dict(size=9)
-        ))
-
-        history_fig.add_trace(go.Scatter(
-            x=list(range(1, len(history_df) + 1)),
-            y=history_df["Baseline deflection (mm)"],
-            mode="lines+markers",
-            name="Baseline deflection",
-            line=dict(
-                color="#4cb9ed",
-                width=2,
-                dash="dash"
-            )
-        ))
-
-        history_fig.update_layout(
-            title="Deflection history",
-            xaxis_title="Saved snapshot",
-            yaxis_title="Deflection (mm)"
-        )
-
-        st.plotly_chart(
-            style_chart(history_fig),
-            use_container_width=True
-        )
-
-        csv_data = history_df.to_csv(
-            index=False
-        ).encode("utf-8")
-
-        st.download_button(
-            "⬇️ Download history as CSV",
-            data=csv_data,
-            file_name="bridge_monitoring_history.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-
-    else:
-
-        st.info(
-            "No snapshots saved yet. Save a simulation snapshot "
-            "to begin building your history."
-        )
-
-# ============================================================
-# FOOTER
-# ============================================================
-
-st.markdown("---")
-
+st.divider()
 st.markdown("""
-<div style="
-    text-align:center;
-    color:#7794ae;
-    font-size:12px;
-    padding:10px;
-">
-    INTELLIGENT BRIDGE MONITORING SYSTEM<br>
-    Educational structural monitoring simulation • 30 m beam model<br>
-    Simulated sensor readings only — not a real bridge safety system
+<div style="text-align:center;color:#8791A4;font-size:11px;padding:10px;">
+  INTELLIGENT BRIDGE MONITORING · EDUCATIONAL SIMULATION
+  <br>
+  Simplified beam calculations and illustrative sensor readings.
+  Not real bridge measurements or a certified structural-safety system.
 </div>
 """, unsafe_allow_html=True)
